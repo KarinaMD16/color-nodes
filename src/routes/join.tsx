@@ -1,6 +1,9 @@
-import React from 'react'
-import { createRoute, Link } from '@tanstack/react-router'
+import { createRoute } from '@tanstack/react-router'
 import { rootRoute } from './__root'
+import { usePostJoinRoom } from '../hooks/userHooks'
+import { useState } from 'react'
+import { useUser } from '../context/userContext'
+import router from '../router'
 
 export const joinRoute = createRoute({
   component: JoinPage,
@@ -9,54 +12,86 @@ export const joinRoute = createRoute({
 })
 
 function JoinPage() {
-  const [roomCode, setRoomCode] = React.useState('')
+  const [roomCode, setRoomCode] = useState('')
+  const { username } = useUser()
+  const { mutate: postJoinRoom } = usePostJoinRoom()
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault?.()
+    if (!roomCode || !username) return
+    postJoinRoom({ username, roomCode })
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-          Join a Room
-        </h1>
-        
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="roomCode" className="block text-sm font-medium text-gray-700 mb-1">
-              Room Code
-            </label>
+    <div className="relative w-screen h-screen overflow-hidden">
+      <video
+        className="fixed top-0 left-0 w-full h-full object-cover z-0"
+        src="https://packaged-media.redd.it/ngwgetoqr7y51/pb/m2-res_1080p.mp4?m=DASHPlaylist.mpd&v=1&e=1757149200&s=36fd0cd68fdebb032055efa60d97a8830317d1e7"
+        autoPlay
+        loop
+        muted
+        playsInline
+      />
+      <div className="fixed inset-0 bg-black/50 z-1"></div>
+      <div className="fixed inset-0 flex items-center font-press-start text-white text-left justify-center p-4 z-10">
+        <form onSubmit={handleSubmit} className="w-full space-y-6 max-w-2xl mx-auto p-6">
+          <h1 className="font-press-start text-center text-3xl md:text-4xl mb-8 whitespace-nowrap">
+            <span style={{ color: '#7F5CC1' }}>Color</span>{' '}
+            <span style={{ color: '#C15CAE' }}>Nodes</span>
+            <span style={{ color: '#B0C15C' }}>!</span>
+          </h1>
+
+          <div className="nes-field">
+            <label htmlFor="username_field">Username</label>
             <input
-              type="text"
-              id="roomCode"
-              value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Enter room code"
-              maxLength={8}
-              autoComplete="off"
-              autoFocus
-            />
-          </div>
-          
-          <Link
-            to="/room/$code"
-            params={{ code: roomCode || 'default' }}
-            className={`w-full block text-center px-6 py-3 font-medium rounded-lg transition-colors duration-200 ${
-              roomCode
-                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-            }`}
-            disabled={!roomCode}
-          >
-            Join Room
-          </Link>
-          
-          <Link
-            to="/"
-            className="block text-center text-indigo-600 hover:text-indigo-800 mt-2"
-          >
-            Back to home
-          </Link>
+            type="text"
+            id="username_field"
+            className="nes-input is-dark w-full text-left"
+            value={username}
+            placeholder="Enter your username"
+          />
         </div>
-      </div>
-    </div>
-  )
+
+        <div className="nes-field">
+          <label htmlFor="roomcode_field">Room Code</label>
+          <input
+            type="text"
+            id="roomcode_field"
+            className="nes-input is-dark w-full text-left"
+            value={roomCode}
+            onChange={(e) => setRoomCode(e.target.value)}
+            placeholder="Enter room code"
+          />
+        </div>
+
+        <div 
+          className="mt-8 flex flex-col items-center space-y-6"
+          tabIndex={-1}
+        >
+          <label className="flex items-center space-x-4 cursor-pointer">
+            <input 
+              type="radio" 
+              className="nes-radio" 
+              name="room-action"
+              tabIndex={0}
+              onClick={() => handleSubmit()}
+            />
+            <span className="font-press-start text-white text-sm">Join</span>
+          </label>
+                                    
+          <label className="flex items-center space-x-4 cursor-pointer">
+            <input 
+              type="radio" 
+              className="nes-radio" 
+              name="room-action"
+              tabIndex={0}
+              onClick={() => router.navigate({ to: '/' })}
+            />
+            <span className="font-press-start text-white text-sm">Back</span>
+          </label>
+        </div>
+    </form>
+  </div>
+</div>
+)
 }
