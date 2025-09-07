@@ -245,7 +245,6 @@ function PlayPage() {
     )
   }
 
-  // Setup phase
   if (game.status === 'Setup') {
     return (
       <div className="relative w-full min-h-screen bg-black">
@@ -300,30 +299,31 @@ function PlayPage() {
                   </div>
 
                   <div className="mb-8">
-                    <div className="grid grid-cols-6 gap-4 max-w-md mx-auto">
+                    <div className="grid grid-cols-6 gap-4 max-w-full mx-auto">
                       {draft.map((hex, idx) => (
                         <button
                           key={idx}
                           onClick={() => hex ? handleRemoveAt(idx) : handlePlaceAt(idx)}
                           className={`
-                            aspect-square rounded-lg border-2 flex items-center justify-center
-                            transition-all transform hover:scale-105
-                            ${hex
-                              ? 'border-white/50 bg-white/10'
-                              : 'border-dashed border-white/30 bg-white/5 hover:bg-white/10'
+                        aspect-square w-40 h-40 
+                        flex items-center justify-center
+                        transition-all transform hover:scale-105 
+                        ${selectedSlot === idx
+                              ? 'border-none bg-white/20 shadow-lg'
+                              : 'border-none bg-transparent'
                             }
-                          `}
+                        ${!isMyTurn || swapMove.isPending
+                              ? 'opacity-50 cursor-not-allowed'
+                              : 'hover:border-white/70 cursor-pointer'
+                            }
+                      `}
                         >
                           {hex ? (
-                            <div
-                              className="w-16 h-16 rounded-full shadow-lg"
-                              style={{ backgroundColor: hex }}
-                              title={`Vaso en posición ${idx} - Clic para quitar`}
-                            />
+                            <CupPixelStraw key={idx} colors={{ body: hex }} />
                           ) : (
                             <div className="text-center">
-                              <div className="text-2xl opacity-40">🏺</div>
-                              <span className="text-xs opacity-60 block">Pos {idx}</span>
+                              <div className="text-2xl opacity-40"></div>
+                              <span className="text-xs opacity-60 block">{idx +1}</span>
                             </div>
                           )}
                         </button>
@@ -391,14 +391,8 @@ function PlayPage() {
                   )}
                 </div>
 
-                {selectedSlot !== null && (
-                  <div className="text-sm text-cyan-400">
-                    Slot {selectedSlot} selected. Click on another slot to swap.
-                  </div>
-                )}
               </div>
 
-              {/* Game board */}
               <div className="mb-8">
                 <div className="grid grid-cols-6 gap-4 max-w-full mx-auto">
                   {game.cups?.map((hex, idx) => (
@@ -428,11 +422,16 @@ function PlayPage() {
                       </p>
                     )}
                 </div>
-
                 {isMyTurn && (
-                  <p className="text-center text-sm text-white/60 mt-3">
-                    Click on two cups to swap them
-                  </p>
+                  selectedSlot !== null ? (
+                    <div className="text-center text-sm text-cyan-400 mt-3">
+                      Slot {selectedSlot +1} selected. Click on another slot to swap.
+                    </div>
+                  ) : (
+                      <p className="text-center text-sm text-white/60 mt-3">
+                      Click on two cups to swap them
+                    </p>
+                  )
                 )}
               </div>
 
@@ -447,7 +446,7 @@ function PlayPage() {
                 </div>
               )}
 
-              {/* Target pattern (if visible) */}
+              {/* target pattern */}
               <div className="mb-6">
                 <div className="grid grid-cols-6 max-w-full mx-auto opacity-75">
                   {Array.from({ length: 6 }).map((_, idx) => (
@@ -461,8 +460,6 @@ function PlayPage() {
                   ))}
                 </div>
               </div>
-
-              {/* Game info */}
               
                 {swapMove.isPending && (<div className="mt-8 p-4 bg-white/5 rounded-lg text-sm text-white/70">
                   <div className="mt-2 text-yellow-400 text-sm">
