@@ -8,6 +8,7 @@ import { useGameHub } from '../../hooks/useGameHub'
 import { GameStateResponse } from '@/models/game'
 import CupPixelStraw from '@/components/CupPixelStraw'
 import { nesStateClass } from '@/utils/btnClass'
+import { hasDuplicateColors } from '@/utils/dupeColor'
 
 export const playRoute = createRoute({
   component: PlayPage,
@@ -17,20 +18,20 @@ export const playRoute = createRoute({
 
 function PlayPage() {
   const { code } = playRoute.useParams()
-  const roomCode = code
+
   const { id: userId, username } = useUser()
-
   const [game, setGame] = useState<GameStateResponse | null>(null)
-  const [pickedColor, setPickedColor] = useState<string | null>(null)
-  const [draft, setDraft] = useState<(string | null)[]>(Array(6).fill(null))
-
-  // Estados para la fase InProgress
-  const [selectedSlot, setSelectedSlot] = useState<number | null>(null)
-
   const start = useStartGame()
   const placeInitial = usePlaceInitial(game?.gameId ?? '')
   const swapMove = useSwapMove(game?.gameId ?? '')
+  const roomCode = code
 
+  const [draft, setDraft] = useState<(string | null)[]>(Array(6).fill(null))
+  const [selectedSlot, setSelectedSlot] = useState<number | null>(null)
+  const [pickedColor, setPickedColor] = useState<string | null>(null)
+  const usedColors = new Set(draft.filter(Boolean) as string[]);
+
+  // orlando
   // --- Candado para no spamear /game/start ---
   const startedRef = useRef(false)
   useEffect(() => {
@@ -52,35 +53,31 @@ function PlayPage() {
       }
     )
   }, [roomCode, start])
+  // orlando
 
-  // --- Conectar SignalR: escuchar updates ---
+  // coenxion con SignalR 
   useGameHub(roomCode, game?.gameId)
 
-  // --- Handlers de UI ---
   const handlePick = (hex: string) => {
-    setPickedColor(hex)
-    console.log('🎨 Color picked:', hex)
-  }
+    if (usedColors.has(hex)) return;
+    setPickedColor(hex);
+  };
 
   const handlePlaceAt = (idx: number) => {
-    if (!pickedColor) {
-      console.warn('⚠️ No color selected')
-      return
-    }
+    if (!pickedColor || usedColors.has(pickedColor)) return;
 
     setDraft(prev => {
-      const next = [...prev]
-      next[idx] = pickedColor
-      console.log(`🎯 Placed ${pickedColor} at position ${idx}`)
-      return next
-    })
-  }
+      const next = [...prev];
+      next[idx] = pickedColor;
+      return next;
+    });
+  };
+
 
   const handleRemoveAt = (idx: number) => {
     setDraft(prev => {
-      const next = [...prev]
-      next[idx] = null
-      console.log(`❌ Removed color from position ${idx}`)
+      const next = [...prev];
+      next[idx] = null;
       return next
     })
   }
@@ -113,39 +110,35 @@ function PlayPage() {
     }
   }
 
-  const canConfirm = draft.every(Boolean)
-  const isMyTurn = game?.currentPlayerId === userId
+  const canConfirm = draft.every(Boolean) && !hasDuplicateColors(draft);
+  const isMyTurn = game?.currentPlayerId === userId;
 
   const confirmInitial = () => {
-    if (!game?.gameId || !canConfirm || !userId || !isMyTurn) {
-      console.warn('⚠️ Cannot confirm placement:', {
-        hasGame: !!game?.gameId,
-        canConfirm,
-        hasUserId: !!userId,
-        isMyTurn
-      })
-      return
+    if (!game?.gameId || !userId || !isMyTurn) return;
+
+    if (!draft.every(Boolean)) {
+      console.warn('⚠️ Faltan vasos por colocar');
+      return;
     }
 
-    console.log('📤 Confirming initial placement:', draft)
+    if (hasDuplicateColors(draft)) {
+      console.warn('⚠️ No puedes repetir colores');
+      return;
+    }
 
     placeInitial.mutate(
       { playerId: userId, cups: draft as string[] },
       {
         onSuccess: (updated) => {
-          console.log('✅ Initial placement confirmed:', updated)
-          // SignalR debería actualizar automáticamente el estado
-          setGame(updated)
-          // Reset draft
-          setDraft(Array(6).fill(null))
-          setPickedColor(null)
+          setGame(updated);
+          setDraft(Array(6).fill(null));
+          setPickedColor(null);
         },
-        onError: (e) => {
-          console.error('❌ Error placing initial cups:', e)
-        },
+        onError: (e) => console.error('Error placing initial cups:', e),
       }
-    )
-  }
+    );
+  };
+
 
   // Loading state esto lo debe aplicar orlando en la sala 
   if (!game) {
@@ -273,20 +266,28 @@ function PlayPage() {
                   <div className="mb-8 mt-8">
                     <h3 className="text-lg mb-3">Available cups</h3>
                     <div className="flex gap-3 flex-wrap">
-                      {game.availableColors?.map((hex) => (
-                        <button
-                          key={hex}
-                          onClick={() => handlePick(hex)}
-                          className={`
-                            flex gap-2 w-30 h-30 rounded-lg 
-                             transition-all transform hover:scale-110
-                          `}
-                          title={`Color: ${hex}`}>
-                          <CupPixelStraw size={80} colors={{ body: hex }} />
-                        </button>
-                      )) || (
-                          <p className="text-red-400"> No available colors</p>
-                        )}
+                      <div className="flex gap-3 flex-wrap">
+                        {game.availableColors?.map((hex) => {
+                          const isUsed = usedColors.has(hex);
+                          return (
+                            <button
+                              key={hex}
+                              onClick={() => handlePick(hex)}
+                              disabled={isUsed}
+                              title={isUsed ? 'Ya usado' : `Color: ${hex}`}
+                              className={`
+          w-12 h-12 rounded-lg border-3 transition-all
+          ${pickedColor === hex ? 'border-emerald-400 shadow-lg shadow-emerald-400/50' : 'border-white/30'}
+          ${isUsed
+                                  ? 'opacity-40 cursor-not-allowed'
+                                  : 'hover:scale-110 hover:border-white/50'
+                                }
+        `}
+                              style={{ backgroundColor: hex }}
+                            />
+                          );
+                        })}
+                      </div>
                     </div>
                     {pickedColor && (
                       <div className="flex mt-4 items-center ml-5 gap-3 mb-6 p-2 w-fit bg-white/10 rounded-lg">
@@ -323,7 +324,7 @@ function PlayPage() {
                           ) : (
                             <div className="text-center">
                               <div className="text-2xl opacity-40"></div>
-                              <span className="text-xs opacity-60 block">{idx +1}</span>
+                              <span className="text-xs opacity-60 block">{idx + 1}</span>
                             </div>
                           )}
                         </button>
@@ -338,12 +339,14 @@ function PlayPage() {
                       className={nesStateClass(!canConfirm || placeInitial.isPending || !isMyTurn)}
                     >
                       {placeInitial.isPending
-                        ? "Sending..."
+                        ? 'Sending...'
                         : !isMyTurn
-                          ? "Not your turn"
-                          : canConfirm
-                            ? "Confirm positions"
-                            : `Missing ${6 - draft.filter(Boolean).length} cups`}
+                          ? 'Waiting for your turn...'
+                          : !draft.every(Boolean)
+                            ? `Missing ${6 - draft.filter(Boolean).length} cups`
+                            : hasDuplicateColors(draft)
+                              ? 'You can\'t repeat colors'
+                              : 'Confirm cups'}
                     </button>
                   </div>
                 </>
@@ -417,7 +420,7 @@ function PlayPage() {
                       <CupPixelStraw key={idx} colors={{ body: hex }} />
                     </button>
                   )) || (
-                    <p className="nes-text is-error">
+                      <p className="nes-text is-error">
                         No available cups
                       </p>
                     )}
@@ -425,10 +428,10 @@ function PlayPage() {
                 {isMyTurn && (
                   selectedSlot !== null ? (
                     <div className="text-center text-sm text-cyan-400 mt-3">
-                      Slot {selectedSlot +1} selected. Click on another slot to swap.
+                      Slot {selectedSlot + 1} selected. Click on another slot to swap.
                     </div>
                   ) : (
-                      <p className="text-center text-sm text-white/60 mt-3">
+                    <p className="text-center text-sm text-white/60 mt-3">
                       Click on two cups to swap them
                     </p>
                   )
@@ -460,13 +463,13 @@ function PlayPage() {
                   ))}
                 </div>
               </div>
-              
-                {swapMove.isPending && (<div className="mt-8 p-4 bg-white/5 rounded-lg text-sm text-white/70">
-                  <div className="mt-2 text-yellow-400 text-sm">
-                    ⏳ Processing swap...
+
+              {swapMove.isPending && (<div className="mt-8 p-4 bg-white/5 rounded-lg text-sm text-white/70">
+                <div className="mt-2 text-yellow-400 text-sm">
+                  ⏳ Processing swap...
                 </div>
               </div>
-                )}
+              )}
             </div>
           </div>
         </div>

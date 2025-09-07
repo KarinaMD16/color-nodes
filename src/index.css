@@ -53,9 +53,6 @@ a:hover {
   a:hover {
     color: #747bff;
   }
-  button {
-    background-color: #f9f9f9;
-  }
 }
 
 @import "./node_modules/nes.css/css/nes.css"
