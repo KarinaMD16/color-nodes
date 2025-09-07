@@ -29,8 +29,8 @@ const AVATAR_SEEDS = [
 ]
 
 function WaitingRoomPage() {
-  const { code } = useParams({ from: route.id })
-  const { username, id: userId } = useUser()
+const { code } = useParams({ from: route })
+  const { username } = useUser()
   const [copied, setCopied] = useState(false)
   const [canStartGame, setCanStartGame] = useState(false)
   const [isStartingGame, setIsStartingGame] = useState(false)
@@ -83,9 +83,7 @@ function WaitingRoomPage() {
       startGame(
         { roomCode: code },
         {
-          onSuccess: (gameData) => {
-            console.log('Game started successfully:', gameData)
-            // Navigate to game page
+          onSuccess: () => {
             router.navigate({ 
               to: '/room/$code/play', 
               params: { code } 
@@ -93,7 +91,6 @@ function WaitingRoomPage() {
           },
           onError: (error) => {
             console.error('Error starting game:', error)
-            alert('Error starting game. Please try again.')
             setIsStartingGame(false)
           }
         }

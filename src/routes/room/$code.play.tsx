@@ -52,61 +52,49 @@ function PlayPage() {
   const startedRef = useRef(false)
   const queryClient = useQueryClient()
 
-  if (!game) {
-    return (
-      <div className="relative w-full min-h-screen bg-black">
-        <div className="fixed inset-0 w-full h-full bg-cover bg-center flex justify-center items-center" style={{ backgroundImage: `url(${bgImage})` }}>
-          <div className="bg-black/70 p-8 rounded-lg w-[min(92vw,700px)]">
-            <h1 className="text-white font-bold text-lg text-center">
-              {start.isPending ? 'Iniciando partida...' : `Conectando a sala ${roomCode}...`}
-            </h1>
+if (!game) {
+  return (
+    <div className="relative w-full min-h-screen bg-black">
+      <div className="fixed inset-0 w-full h-full bg-cover bg-center flex justify-center items-center" style={{ backgroundImage: `url(${bgImage})` }}>
+        <div className="bg-black/70 p-8 rounded-lg w-[min(92vw,700px)]">
+          <h1 className="text-white font-bold text-lg text-center mb-6">
+            {start.isPending ? 'Starting Game...' : 'Connecting to Game...'}
+          </h1>
 
-            <div className="mt-4 text-xs text-gray-300 space-y-1 bg-gray-800/60 p-3 rounded">
-              <p><strong>Debug:</strong></p>
-              <p>Room: {roomCode}</p>
-              <p>User ID: {userId} {userId === 0 && '⚠️ NOT AUTHENTICATED'}</p>
-              <p>Username: {username || 'N/A'}</p>
-              <p>StartedRef: {startedRef.current.toString()}</p>
-              <p>Pending: {start.isPending.toString()} | Success: {start.isSuccess.toString()} | Error: {start.isError.toString()}</p>
-              {start.error && <p className="text-red-300">Error: {(start as any).error?.message || 'desconocido'}</p>}
-            </div>
-
-            {(start.isError || startStuck) && (
-              <div className="text-sm mt-4 space-y-2">
-                <div className="text-yellow-300">Parece que tardó demasiado en iniciar.</div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => { startedRef.current = false; start.reset(); window.location.reload() }}
-                    className="bg-orange-600 hover:bg-orange-700 px-3 py-2 rounded text-white"
-                  >
-                    🔄 Reintentar
-                  </button>
-                  <button
-                    onClick={async () => {
-                      try {
-                        const res = await fetch('/api/game/start', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ roomCode }),
-                        })
-                        const data: GameStateResponse = await res.json()
-                        setGame(data)
-                        if (data?.gameId) queryClient.setQueryData(['game', data.gameId], data)
-                      } catch (e) { console.error('Fallback fetch error', e) }
-                    }}
-                    className="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-white"
-                  >
-                    🧪 Fallback: Direct Fetch
-                  </button>
-                </div>
-                <p className="text-[11px] text-white/70">Si usas otra baseURL en dev, ajusta el endpoint del fallback.</p>
-              </div>
-            )}
+          {/* Simple loading animation */}
+          <div className="flex justify-center mb-6">
+            <div className="animate-spin text-4xl">🎮</div>
           </div>
+
+          {/* Only show errors if something's wrong */}
+          {(start.isError || startStuck) && (
+            <div className="text-center space-y-4">
+              <p className="text-yellow-300">Connection taking longer than expected</p>
+              <div className="flex gap-2 justify-center">
+                <button
+                  onClick={() => { 
+                    startedRef.current = false; 
+                    start.reset(); 
+                    start.mutate({ roomCode }); 
+                  }}
+                  className="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded text-white transition-colors"
+                >
+                  Try Again
+                </button>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded text-white transition-colors"
+                >
+                  Refresh Page
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    )
-  }
+    </div>
+  )
+}
 
   if (game.status === 'Setup') {
     return (

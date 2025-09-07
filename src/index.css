@@ -1,6 +1,6 @@
 /* Import Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
+@import "./node_modules/nes.css/css/nes.css";
 
 /* Import Tailwind CSS */
 @import 'tailwindcss/base';
@@ -75,4 +75,3 @@ button:disabled,
   }
 }
 
-@import "./node_modules/nes.css/css/nes.css"
