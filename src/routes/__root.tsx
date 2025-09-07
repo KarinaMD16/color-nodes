@@ -1,5 +1,4 @@
 import { Outlet, createRootRoute } from '@tanstack/react-router'
-import App from '../App'
 
 export const rootRoute = createRootRoute({
   component: rootLayout,
@@ -8,7 +7,6 @@ export const rootRoute = createRootRoute({
 function rootLayout() {
   return (
     <>
-      <App />
       <Outlet />
     </>
   )

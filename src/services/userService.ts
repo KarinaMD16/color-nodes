@@ -1,8 +1,8 @@
-import { User } from "../models/user";
+import { CreateRoom, User } from "../models/user";
 import colorNodesAPI from "../api/client";
 
 export const postCreateRoom = async (user: User) => {
-    const response = await colorNodesAPI.post("/Room/Create", user);
+    const response = await colorNodesAPI.post<CreateRoom>("/Room/Create", user);
     return response.data;
 }
 
@@ -14,4 +14,9 @@ export const postCreateUser = async (username: string) => {
 export const postJoinRoom = async (username: string, roomCode: string) => {
     const response = await colorNodesAPI.post(`/Room/join/${username}/${roomCode}`);
     return response.data;
+}
+
+export async function getUserById(id: number): Promise<User> {
+  const { data } = await colorNodesAPI.get<User>(`/users/${id}`)
+  return data
 }
