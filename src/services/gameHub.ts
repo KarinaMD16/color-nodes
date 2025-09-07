@@ -4,7 +4,7 @@ import * as signalR from '@microsoft/signalr';
 const HUB_URL =
   import.meta.env.VITE_API_BASE_URL
     ? `${import.meta.env.VITE_API_BASE_URL}/gameHub`
-    : 'https://localhost:7133/gameHub';
+    : 'https://localhost:7081/gameHub';
 
 type Handlers = {
   onStateUpdated?: (s: GameStateResponse) => void;

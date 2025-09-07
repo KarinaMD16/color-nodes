@@ -15,6 +15,12 @@ export const postJoinRoom = async (username: string, roomCode: string) => {
     const response = await colorNodesAPI.post(`/Room/join/${username}/${roomCode}`);
     return response.data;
 }
+
+export const getRoom = async (roomCode: string) => {
+    const response = await colorNodesAPI.get(`/Room/by-code/${roomCode}`);
+    return response.data;
+}
+
 export async function getUserById(id: number): Promise<User> {
   const { data } = await colorNodesAPI.get<User>(`/users/${id}`)
   return data

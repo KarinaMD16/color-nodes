@@ -1,16 +1,74 @@
-import React from 'react'
-import { createRoute, Link, useParams } from '@tanstack/react-router'
+import { useState, useEffect, useMemo } from 'react'
+import { createRoute, useParams } from '@tanstack/react-router'
 import { rootRoute } from '../__root'
+import { useUser } from '../../context/userContext'
+import { useGetRoom } from '../../hooks/userHooks'
+import { useStartGame } from '../../hooks/gameHooks'
+import { useGameHub } from '../../hooks/useGameHub'
+import router from '../../router'
 
 export const route = createRoute({
   getParentRoute: () => rootRoute,
   path: '/room/$code',
-  component: RoomPage,
+  component: WaitingRoomPage,
 })
 
-function RoomPage() {
+interface Player {
+  id: string
+  username: string
+  isHost: boolean
+  avatar: string
+}
+
+// Lista de nombres para avatares
+const AVATAR_SEEDS = [
+  'Adrian', 'Brooklynn', 'Robert', 'Luis', 'Jameson', 'Emery', 'Wyatt', 'Aidan',
+  'Sadie', 'Ryker', 'Mason', 'Maria', 'Liam', 'Easton', 'Kingston', 'George',
+  'Jocelyn', 'Caleb', 'Leah', 'Oliver', 'Emma', 'Noah', 'Sophia', 'Jackson',
+  'Isabella', 'Lucas', 'Mia', 'Alexander', 'Charlotte', 'Ethan', 'Amelia'
+]
+
+function WaitingRoomPage() {
   const { code } = useParams({ from: route.id })
-  const [copied, setCopied] = React.useState(false)
+  const { username, id: userId } = useUser()
+  const [copied, setCopied] = useState(false)
+  const [canStartGame, setCanStartGame] = useState(false)
+  const [isStartingGame, setIsStartingGame] = useState(false)
+
+  // Fetch room data
+  const { data: roomData, isLoading, refetch } = useGetRoom(code)
+  const { mutate: startGame } = useStartGame()
+  
+  // Use GameHub for real-time updates
+  useGameHub(code)
+
+  // Usar useMemo para evitar recalcular en cada render
+  const players: Player[] = useMemo(() => {
+    if (!roomData?.users) return []
+
+    return roomData.users.map((username: string, index: number) => ({
+      id: index.toString(),
+      username: username,
+      isHost: index === 0,
+      avatar: AVATAR_SEEDS[index % AVATAR_SEEDS.length] // Avatar basado en índice
+    }))
+  }, [roomData?.users])
+
+  const isHost = roomData?.users?.[0] === username 
+
+  useEffect(() => {
+    // Check if there are at least 2 players
+    setCanStartGame(players.length >= 2 && isHost)
+  }, [players, isHost])
+
+  useEffect(() => {
+    // Refetch room data every few seconds to get updated player list
+    const interval = setInterval(() => {
+      refetch()
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [refetch])
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(code)
@@ -18,45 +76,211 @@ function RoomPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
-      <div className="container mx-auto px-4 py-8">
-        <header className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">Color Nodes</h1>
-          <Link to="/" className="text-gray-300 hover:text-white">
-            Leave Room
-          </Link>
-        </header>
+  const handleStartGame = () => {
+    if (canStartGame && !isStartingGame) {
+      setIsStartingGame(true)
+      
+      startGame(
+        { roomCode: code },
+        {
+          onSuccess: (gameData) => {
+            console.log('Game started successfully:', gameData)
+            // Navigate to game page
+            router.navigate({ 
+              to: '/room/$code/play', 
+              params: { code } 
+            })
+          },
+          onError: (error) => {
+            console.error('Error starting game:', error)
+            alert('Error starting game. Please try again.')
+            setIsStartingGame(false)
+          }
+        }
+      )
+    }
+  }
 
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 max-w-2xl mx-auto">
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-2">Room Code</h2>
-            <div className="flex items-center gap-2">
-              <code className="bg-black/30 px-4 py-2 rounded-lg text-xl font-mono">
+  const handleLeaveRoom = () => {
+    router.navigate({ to: '/' })
+  }
+
+  if (isLoading) {
+    return (
+      <div className="relative w-screen h-screen overflow-hidden bg-black flex items-center justify-center">
+        <div className="text-white font-press-start">Loading room...</div>
+      </div>
+    )
+  }
+
+  if (!roomData) {
+    return (
+      <div className="relative w-screen h-screen overflow-hidden bg-black flex items-center justify-center">
+        <div className="text-white font-press-start text-center">
+          <p className="mb-4">Room not found</p>
+          <button 
+            onClick={() => router.navigate({ to: '/' })}
+            className="nes-btn is-primary"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative w-screen h-screen overflow-hidden">
+      <video
+        className="fixed top-0 left-0 w-full h-full object-cover z-0"
+        src="https://videocdn.cdnpk.net/videos/85a91fd3-b609-5103-a429-72054aba7ac1/horizontal/previews/clear/large.mp4?token=exp=1757261246~hmac=5f4bc10ff7ed7f3079aacb730235a4e9240cdad185bd8695c2d073d849ae39d2"
+        autoPlay
+        loop
+        muted
+        playsInline
+      />
+      <div className="fixed inset-0 bg-black/50 z-1"></div>
+      
+      <div className="fixed inset-0 flex items-center font-press-start text-white justify-center p-4 z-10">
+        <div className="w-full space-y-6 max-w-4xl mx-auto p-6">
+          <h1 className="font-press-start text-center text-3xl md:text-4xl mb-8">
+            <span style={{ color: '#7F5CC1' }}>Waiting</span>{' '}
+            <span style={{ color: '#C15CAE' }}>Room</span>
+            <span style={{ color: '#B0C15C' }}>!</span>
+          </h1>
+
+          {/* Room Code Section */}
+          <div className="nes-container is-dark with-title mb-6">
+            <p className="title">Room Code</p>
+            <div className="flex items-center justify-center space-x-4">
+              <code className="bg-black/30 px-4 py-2 rounded text-2xl font-mono tracking-wider">
                 {code}
               </code>
               <button
                 onClick={copyToClipboard}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                className="nes-btn is-primary"
               >
                 {copied ? 'Copied!' : 'Copy'}
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white/5 p-4 rounded-lg">
-              <h3 className="font-medium mb-2">Share this code</h3>
-              <p className="text-sm text-gray-300">
-                Invite others to join this room by sharing the room code above.
-              </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Players List */}
+            <div className="nes-container is-dark with-title">
+              <p className="title">Players ({players.length}/4)</p>
+              <div className="space-y-3">
+
+                  {players.map((player, index) => (
+                    <div key={`player-${player.id}-${index}`} className="flex items-center justify-between p-2 bg-black/20 rounded">
+                      <div className="flex items-center space-x-3">
+                        {/* Avatar */}
+                        <img
+                          src={`https://api.dicebear.com/9.x/pixel-art/svg?seed=${player.avatar}`}
+                          alt={`${player.username} avatar`}
+                          className="w-8 h-8 rounded"
+                        />
+                        <span className="text-sm text-white">#{index + 1}</span>
+                        <span className={player.username === username ? 'text-yellow-300' : 'text-white'}>
+                          {player.username}
+                        </span>
+                        {player.isHost && (
+                          <span className="text-yellow-400 text-xs">(HOST)</span>
+                        )}
+                        {player.username === username && (
+                          <span className="text-green-400 text-xs">(YOU)</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                
+                  {/* Empty slots */}
+                  {Array.from({ length: 4 - players.length }).map((_, index) => (
+                    <div key={`empty-slot-${index}`} className="flex items-center p-2 bg-black/10 rounded opacity-50">
+                      <div className="w-8 h-8 bg-gray-600 rounded mr-3 flex items-center justify-center">
+                        <span className="text-xs text-gray-400">?</span>
+                      </div>
+                      <span className="text-sm">#{players.length + index + 1}</span>
+                      <span className="ml-3 text-gray-400">Waiting for player...</span>
+                    </div>
+                  ))}
+              </div>
             </div>
-            
-            <div className="bg-white/5 p-4 rounded-lg">
-              <h3 className="font-medium mb-2">Start collaborating</h3>
-              <p className="text-sm text-gray-300">
-                Once others join, you can start collaborating in real-time.
-              </p>
+
+            {/* Game Settings & Actions */}
+            <div className="space-y-4">
+              <div className="nes-container is-dark with-title">
+                <p className="title">Game Settings</p>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span>Max Players:</span>
+                    <span>4</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Turn Time:</span>
+                    <span>30s</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Room Host:</span>
+                    <span>{players.find(p => p.isHost)?.username}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-4">
+                {isHost && (
+                  <label className="flex items-center space-x-4 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      className="nes-radio" 
+                      name="start-action"
+                      disabled={!canStartGame || isStartingGame}
+                      onClick={handleStartGame}
+                    />
+                    <span className={`font-press-start text-sm ${!canStartGame || isStartingGame ? 'text-gray-500' : ''}`}>
+                      {isStartingGame ? 'Starting...' : 'Start Game'}
+                    </span>
+                  </label>
+                )}
+
+                <label className="flex items-center space-x-4 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    className="nes-radio" 
+                    name="leave-action"
+                    disabled={isStartingGame}
+                    onClick={handleLeaveRoom}
+                  />
+                  <span className={`font-press-start text-sm ${isStartingGame ? 'text-gray-500' : ''}`}>
+                    Leave Room
+                  </span>
+                </label>
+              </div>
+
+              {/* Status Messages */}
+              <div className="nes-container is-dark">
+                {isStartingGame && (
+                  <p className="text-xs text-blue-400">
+                    Starting game...
+                  </p>
+                )}
+                {!canStartGame && isHost && players.length < 2 && !isStartingGame && (
+                  <p className="text-xs text-yellow-400">
+                    Waiting for more players to join...
+                  </p>
+                )}
+                {!isHost && !isStartingGame && (
+                  <p className="text-xs text-blue-400">
+                    Waiting for host to start the game...
+                  </p>
+                )}
+                {canStartGame && isHost && !isStartingGame && (
+                  <p className="text-xs text-green-400">
+                    Ready to start! Click "Start Game" when you're ready.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
