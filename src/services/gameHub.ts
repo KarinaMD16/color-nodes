@@ -1,7 +1,7 @@
 import { GameStateResponse } from '@/models/game';
 import * as signalR from '@microsoft/signalr';
 
-const HUB_URL ='https://localhost:7133/gameHub';
+const HUB_URL = 'https://localhost:7081/gameHub';
 
 type Handlers = {
   onStateUpdated?: (s: GameStateResponse) => void;
@@ -16,7 +16,7 @@ type Handlers = {
 export function createGameHub(roomCode: string, username: string, h: Handlers = {}) {
   const connection = new signalR.HubConnectionBuilder()
     .withUrl(HUB_URL)
-    .withAutomaticReconnect()
+    .withAutomaticReconnect({ nextRetryDelayInMilliseconds: () => 2000 })
     .build();
 
   connection.on('StateUpdated', (s: GameStateResponse) => h.onStateUpdated?.(s));
@@ -30,23 +30,31 @@ export function createGameHub(roomCode: string, username: string, h: Handlers = 
   connection.onreconnecting(() => h.onConn?.('reconnecting'));
   connection.onreconnected(async () => {
     h.onConn?.('connected');
-    await joinGroup(); // rejoin group on reconnect
+    await joinRoom(); 
+    if (lastJoinedGameId) await joinGame(lastJoinedGameId);
   });
   connection.onclose(() => h.onConn?.('disconnected'));
 
-  async function joinGroup() {
+  let lastJoinedGameId: string | null = null;
+
+  async function joinRoom() {
     await connection.invoke('JoinRoom', roomCode, username);
+  }
+
+  async function joinGame(gameId: string) {
+    lastJoinedGameId = gameId;
+    await connection.invoke('JoinGame', gameId);
   }
 
   async function start() {
     await connection.start();
     h.onConn?.('connected');
-    await joinGroup();
+    await joinRoom(); 
   }
 
   async function stop() {
     await connection.stop();
   }
 
-  return { connection, start, stop };
+  return { connection, start, stop, joinGame };
 }

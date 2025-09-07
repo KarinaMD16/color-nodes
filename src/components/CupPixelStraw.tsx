@@ -32,6 +32,7 @@ export default function CupPixelStraw({
             shapeRendering="crispEdges"
             aria-label="pixel-cup-with-straw"
             style={style}
+            className='is-pointer'
         >
             {/* ===== PAJILLA ===== */}
             {/* tramo vertical */}

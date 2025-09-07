@@ -50,7 +50,7 @@ function IndexPage() {
             className="mt-8 flex flex-col items-center space-y-6"
             tabIndex={-1}
           >
-            <label className="flex items-center space-x-4 cursor-pointer">
+            <label className="flex items-center space-x-4 is-pointer">
               <input
                 type="radio"
                 className="nes-radio"
@@ -103,7 +103,7 @@ function IndexPage() {
               <span className="font-press-start text-white text-sm">Create room</span>
             </label>
 
-            <label className="flex items-center space-x-4 cursor-pointer">
+            <label className="flex items-center space-x-4 is-pointer">
               <input
                 type="radio"
                 className="nes-radio"
