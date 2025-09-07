@@ -1,12 +1,16 @@
 import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { GameStateResponse } from '@/models/game'
+import type { GameStateResponse } from '@/models/game'
 import { createGameHub } from '@/services/gameHub'
 import { useUser } from '@/context/userContext'
 
-export function useGameHub(roomCode: string, gameId?: string) {
+export function useGameHub(
+  roomCode: string,
+  gameId?: string,
+  onUpdate?: (s: GameStateResponse) => void
+) {
   const qc = useQueryClient()
-  const { username } = useUser() 
+  const { username } = useUser()
   const hubRef = useRef<ReturnType<typeof createGameHub> | null>(null)
 
   useEffect(() => {
@@ -14,31 +18,37 @@ export function useGameHub(roomCode: string, gameId?: string) {
 
     const hub = createGameHub(roomCode, username, {
       onStateUpdated: (s: GameStateResponse) => {
-        if (gameId && s.gameId === gameId) {
-          qc.setQueryData(['game', gameId], s)
+        if (s?.gameId) {
+          qc.setQueryData(['game', s.gameId], s)
+        }
+        if (!gameId || s.gameId === gameId) {
+          onUpdate?.(s)
         }
       },
-      onHitFeedback: (p) => {
-        console.log('hit', p.message)
-      },
       onTurnChanged: (p) => {
-        console.log('cambio turno', p)
+        if (!gameId) return
+        const prev = qc.getQueryData<GameStateResponse>(['game', gameId])
+        if (prev) {
+          const patched = { ...prev, currentPlayerId: p.currentPlayerId }
+          qc.setQueryData(['game', gameId], patched)
+          onUpdate?.(patched)
+        }
       },
-      onFinished: (p) => {
-        console.log('fin  juego', p)
-      },
-      onConn: (state) => {
-        console.log('conexion exitosa', state)
-      },
+      onHitFeedback: (p) => console.log('hit', p.message),
+      onFinished: (p) => console.log('fin juego', p),
+      onConn: (state) => console.log('hub', state),
     })
 
     hubRef.current = hub
     hub.start().catch(console.error)
 
-    return () => {
-      hub.stop().catch(console.error)
-    }
-  }, [roomCode, gameId, username, qc])
+    return () => { hub.stop().catch(console.error) }
+  }, [roomCode, gameId, username, qc, onUpdate])
+
+  useEffect(() => {
+    if (!hubRef.current?.joinGame || !gameId) return
+    hubRef.current.joinGame(gameId).catch(console.error)
+  }, [gameId])
 
   return {}
 }

@@ -15,7 +15,9 @@
     "@tanstack/react-router": "^1.131.35",
     "@tanstack/react-router-devtools": "^1.131.27",
     "axios": "^1.11.0",
+    "framer-motion": "^12.23.12",
     "gsap": "^3.13.0",
+    "lucide-react": "^0.542.0",
     "nes.css": "^2.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

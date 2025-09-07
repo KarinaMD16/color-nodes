@@ -34,6 +34,7 @@ body {
   line-height: 1.5;
 }
 
+
 /* Links */
 a {
   color: #3b82f6;
@@ -45,6 +46,25 @@ a {
 a:hover {
   color: #60a5fa;
 }
+
+button:not(:disabled),
+[type="button"],
+[type="submit"],
+a[href],
+summary,
+[role="button"],
+.nes-btn,
+.is-pointer,
+[data-clickable="true"] {
+  cursor: pointer !important;
+}
+
+/* Y usa el cursor de "no permitido" cuando esté deshabilitado */
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed !important;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -52,9 +72,6 @@ a:hover {
   }
   a:hover {
     color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
   }
 }
 

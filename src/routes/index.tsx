@@ -131,7 +131,7 @@ function IndexPage() {
               </span>
             </label>
 
-            <label className="flex items-center space-x-4 cursor-pointer">
+            <label className="flex items-center space-x-4 is-pointer">
               <input
                 type="radio"
                 className="nes-radio"
