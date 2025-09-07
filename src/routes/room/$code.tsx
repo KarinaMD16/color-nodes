@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { createRoute, useParams } from '@tanstack/react-router'
+import { createRoute } from '@tanstack/react-router'
 import { rootRoute } from '../__root'
 import { useUser } from '../../context/userContext'
 import { useGetRoom, usePostLeaveRoom } from '../../hooks/userHooks'

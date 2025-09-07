@@ -60,18 +60,11 @@ if (!game) {
           <h1 className="text-white font-bold text-lg text-center mb-6">
             {start.isPending ? 'Starting Game...' : 'Connecting to Game...'}
           </h1>
-
           {/* Simple loading animation */}
-          <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-6">
             <div className="animate-spin text-4xl">🎮</div>
-          </div>
-          {start.reset && (
-            <div className="text-center">
-              <button onClick={start.reset} className="nes-btn is-primary">
-                Reset
-              </button>
             </div>
-          )}
+
         </div>
       </div>
     </div>
