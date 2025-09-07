@@ -2,19 +2,18 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getGame, postGameStart, postPlaceInitial, postSwap, postTick } from '@/services/gameService';
 import { PlaceInitialCupsRequest, SwapRequest, GameStateResponse } from '@/models/game';
 
-
 export const useGameState = (gameId?: string) =>
   useQuery({
     enabled: !!gameId,
     queryKey: ['game', gameId],
     queryFn: () => getGame(gameId!),
     staleTime: 5_000,
-  });
+});
 
 export const useStartGame = () =>
   useMutation({
     mutationFn: postGameStart,
-  });
+});
 
 export const usePlaceInitial = (gameId: string) => {
   const qc = useQueryClient();

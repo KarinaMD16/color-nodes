@@ -28,18 +28,15 @@ function PlayPage() {
   const roomCode = code
   const { id: userId, username } = useUser()
 
-  // ⬅️ Asegúrate de que tu hook exponga 'start' si quieres usar sus flags aquí
   const { game, setGame, start, startStuck } = useStartGameWithWatchdog(roomCode, userId ?? 0)
 
   useGameHub(roomCode, game?.gameId, setGame)
 
   const { items, isAnimating } = useAnimatedCups(game?.cups)
 
-  // ⬅️ saca también swapMove
   const { isMyTurn, selectedSlot, handleSlotClick, swapMove } =
     useSwap(game, userId ?? 0, setGame, isAnimating)
 
-  // ⬅️ incluye placeInitial si lo expone el hook
   const {
     draft,
     pickedColor,
@@ -49,14 +46,12 @@ function PlayPage() {
     handlePlaceAt,
     handleRemoveAt,
     confirmInitial,
-    placeInitial, // <--- importante
+    placeInitial,
   } = useInitialPhase(game, userId ?? 0, isMyTurn, setGame)
 
-  // ⬅️ faltaban estas refs/utilidades
   const startedRef = useRef(false)
   const queryClient = useQueryClient()
 
-  // Loading - salas - orlando
   if (!game) {
     return (
       <div className="relative w-full min-h-screen bg-black">
