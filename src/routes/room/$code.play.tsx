@@ -65,29 +65,11 @@ if (!game) {
           <div className="flex justify-center mb-6">
             <div className="animate-spin text-4xl">🎮</div>
           </div>
-
-          {/* Only show errors if something's wrong */}
-          {(start.isError || startStuck) && (
-            <div className="text-center space-y-4">
-              <p className="text-yellow-300">Connection taking longer than expected</p>
-              <div className="flex gap-2 justify-center">
-                <button
-                  onClick={() => { 
-                    startedRef.current = false; 
-                    start.reset(); 
-                    start.mutate({ roomCode }); 
-                  }}
-                  className="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded text-white transition-colors"
-                >
-                  Try Again
-                </button>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded text-white transition-colors"
-                >
-                  Refresh Page
-                </button>
-              </div>
+          {start.reset && (
+            <div className="text-center">
+              <button onClick={start.reset} className="nes-btn is-primary">
+                Reset
+              </button>
             </div>
           )}
         </div>

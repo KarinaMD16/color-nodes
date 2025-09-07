@@ -40,10 +40,12 @@ function IndexPage() {
         }
 
         // Ahora crear la sala con el usuario
-        createRoom({ username: inputUsername }, {
-          onSuccess: (roomData) => {
-            console.log('✅ Room created:', roomData)
-            
+        createRoom(
+          inputUsername,
+          {
+            onSuccess: (roomData) => {
+              console.log('✅ Room created:', roomData)
+
             const roomCode = roomData.code 
             if (!roomCode) {
               console.error('❌ No room code in response:', roomData)

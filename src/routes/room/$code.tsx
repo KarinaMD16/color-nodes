@@ -2,10 +2,13 @@ import { useState, useEffect, useMemo } from 'react'
 import { createRoute, useParams } from '@tanstack/react-router'
 import { rootRoute } from '../__root'
 import { useUser } from '../../context/userContext'
-import { useGetRoom } from '../../hooks/userHooks'
+import { useGetRoom, usePostLeaveRoom } from '../../hooks/userHooks'
 import { useStartGame } from '../../hooks/gameHooks'
 import { useGameHub } from '../../hooks/useGameHub'
 import router from '../../router'
+import { Player, AVATAR_SEEDS } from '@/types/PlayerTypes'
+import { User } from '@/models/user'
+
 
 export const route = createRoute({
   getParentRoute: () => rootRoute,
@@ -13,62 +16,41 @@ export const route = createRoute({
   component: WaitingRoomPage,
 })
 
-interface Player {
-  id: string
-  username: string
-  isHost: boolean
-  avatar: string
-}
 
-// Lista de nombres para avatares
-const AVATAR_SEEDS = [
-  'Adrian', 'Brooklynn', 'Robert', 'Luis', 'Jameson', 'Emery', 'Wyatt', 'Aidan',
-  'Sadie', 'Ryker', 'Mason', 'Maria', 'Liam', 'Easton', 'Kingston', 'George',
-  'Jocelyn', 'Caleb', 'Leah', 'Oliver', 'Emma', 'Noah', 'Sophia', 'Jackson',
-  'Isabella', 'Lucas', 'Mia', 'Alexander', 'Charlotte', 'Ethan', 'Amelia'
-]
 
 function WaitingRoomPage() {
-const { code } = useParams({ from: route })
+  const { code } = route.useParams()
   const { username } = useUser()
   const [copied, setCopied] = useState(false)
   const [canStartGame, setCanStartGame] = useState(false)
   const [isStartingGame, setIsStartingGame] = useState(false)
-
-  // Fetch room data
-  const { data: roomData, isLoading, refetch } = useGetRoom(code)
+  const { mutate: leaveRoom } = usePostLeaveRoom()
+  const { data: roomData, isLoading } = useGetRoom(code)
   const { mutate: startGame } = useStartGame()
   
-  // Use GameHub for real-time updates
   useGameHub(code)
 
-  // Usar useMemo para evitar recalcular en cada render
+  // Actualizar para manejar objetos de usuario completos
   const players: Player[] = useMemo(() => {
     if (!roomData?.users) return []
 
-    return roomData.users.map((username: string, index: number) => ({
-      id: index.toString(),
-      username: username,
+    // Mapear los datos del usuario a la estructura Player
+    return roomData.users.map((user: User, index: number) => ({
+      id: user.id,
+      username: user.username, 
       isHost: index === 0,
-      avatar: AVATAR_SEEDS[index % AVATAR_SEEDS.length] // Avatar basado en índice
+      avatar: AVATAR_SEEDS[index % AVATAR_SEEDS.length]
     }))
   }, [roomData?.users])
 
-  const isHost = roomData?.users?.[0] === username 
+  // Determinar si el usuario actual es el host
+  const isHost = roomData?.users?.[0]?.username === username || roomData?.users?.[0]?.name === username
 
   useEffect(() => {
     // Check if there are at least 2 players
     setCanStartGame(players.length >= 2 && isHost)
   }, [players, isHost])
 
-  useEffect(() => {
-    // Refetch room data every few seconds to get updated player list
-    const interval = setInterval(() => {
-      refetch()
-    }, 3000)
-
-    return () => clearInterval(interval)
-  }, [refetch])
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(code)
@@ -99,13 +81,17 @@ const { code } = useParams({ from: route })
   }
 
   const handleLeaveRoom = () => {
-    router.navigate({ to: '/' })
+    leaveRoom({ 
+      userId: roomData?.users?.find((u: User) => u.username === username)?.id, 
+      roomCode: code 
+    })
   }
 
   if (isLoading) {
+    // Simple loading animation
     return (
-      <div className="relative w-screen h-screen overflow-hidden bg-black flex items-center justify-center">
-        <div className="text-white font-press-start">Loading room...</div>
+      <div className="flex justify-center mb-6">
+        <div className="animate-spin text-4xl">🎮</div>
       </div>
     )
   }

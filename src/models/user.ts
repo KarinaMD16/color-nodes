@@ -1,6 +1,8 @@
 export interface User {
-    id?: number;
+    id: number;
     username: string;
+    Score: number;
+    RoomId?: number;
 }
 
 export interface CreateRoom {

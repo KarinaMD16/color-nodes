@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getRoom, getUserById, postCreateRoom, postCreateUser, postJoinRoom } from "../services/userService";
+import { getRoom, getUserById, postCreateRoom, postCreateUser, postJoinRoom, postLeaveRoom } from "../services/userService";
 import { User } from "@/models/user";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -26,6 +26,21 @@ export function usePostJoinRoom() {
         },
         onError: (error) => {
             console.error('Error joining room:', error);
+        }
+    })
+}
+
+export function usePostLeaveRoom() {
+    const navigate = useNavigate();
+    return useMutation({
+        mutationFn: ({ userId, roomCode }: { userId: number, roomCode: string }) =>
+            postLeaveRoom(userId, roomCode),
+        onSuccess: (data) => {
+            console.log('User left room successfully:', data);
+             navigate({ to: '/' });
+        },
+        onError: (error) => {
+            console.error('Error leaving room:', error);
         }
     })
 }
