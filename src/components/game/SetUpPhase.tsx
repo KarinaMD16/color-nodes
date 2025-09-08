@@ -27,13 +27,12 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
     applyDraft, 
   } = useInitialPhase(game, game.currentPlayerId ?? 0, isMyTurn, setGame)
 
-  // Colores usados en el board
+  // en el board
   const usedColors = useMemo(
     () => new Set((draft.filter(Boolean) as string[])),
     [draft]
   )
 
-  // Supply real: SOLO colores no usados (evita ids duplicados en dnd-kit)
   const supplyColors = useMemo(
     () => (game.availableColors ?? []).filter(hex => !usedColors.has(hex)),
     [game.availableColors, usedColors]
