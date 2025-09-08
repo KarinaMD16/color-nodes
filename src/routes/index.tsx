@@ -1,10 +1,10 @@
 import { createRoute } from '@tanstack/react-router'
 import { rootRoute } from './__root'
 import Squares from '../components/Squares';
-import { usePostCreateRoom } from '../hooks/userHooks';
+import { usePostCreateRoom, usePostCreateUser } from '../hooks/userHooks';
 import { useUser } from '../context/userContext';
 import router from '../router';
-import { postCreateRoom } from '@/services/userService';
+import { useState } from 'react';
 
 export const indexRoute = createRoute({
   component: IndexPage,
@@ -13,9 +13,78 @@ export const indexRoute = createRoute({
 })
 
 function IndexPage() {
-  const mutate = usePostCreateRoom()
-  // corregir (orlando)
-  const { setUser, id, username } = useUser()
+  const { mutate: createRoom } = usePostCreateRoom()
+  const { mutate: createUser } = usePostCreateUser()
+  const { setUser, username } = useUser()
+  const [inputUsername, setInputUsername] = useState(username || '')
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false)
+
+  const handleCreateRoom = () => {
+    if (!inputUsername.trim()) {
+      alert('Please enter a username')
+      return
+    }
+
+    setIsCreatingRoom(true)
+    console.log('🚀 Creating user first:', inputUsername)
+
+    // Primero crear el usuario
+    createUser(inputUsername, {
+      onSuccess: (userData) => {
+        console.log('✅ User created:', userData)
+        
+        // Establecer el usuario en el contexto
+        const userId = userData.id || userData.userId
+        if (userId) {
+          setUser(userId, inputUsername)
+        }
+
+        // Ahora crear la sala con el usuario
+        createRoom(
+          inputUsername,
+          {
+            onSuccess: (roomData) => {
+              console.log('✅ Room created:', roomData)
+
+            const roomCode = roomData.code 
+            if (!roomCode) {
+              console.error('❌ No room code in response:', roomData)
+              alert('Error: No room code received')
+              setIsCreatingRoom(false)
+              return
+            }
+
+            // Navegar a la sala
+            router.navigate({
+              to: '/room/$code',
+              params: { code: roomCode }
+            })
+          },
+          onError: (error) => {
+            console.error('❌ Error creating room:', error)
+            alert('Error creating room. Please try again.')
+            setIsCreatingRoom(false)
+          }
+        })
+      },
+      onError: (error) => {
+        console.error('❌ Error creating user:', error)
+        alert('Error creating user. Please try again.')
+        setIsCreatingRoom(false)
+      }
+    })
+  }
+
+  const handleJoinRoom = () => {
+    if (!inputUsername.trim()) {
+      alert('Please enter a username')
+      return
+    }
+
+    // Para join, establecer username y navegar
+    setUser(-1, inputUsername) // ID temporal
+    router.navigate({ to: '/join' })
+  }
 
   return (
     <div className="relative w-full min-h-screen bg-black">
@@ -35,6 +104,7 @@ function IndexPage() {
             <span style={{ color: '#C15CAE' }}>Nodes</span>
             <span style={{ color: '#B0C15C' }}>!</span>
           </h1>
+          
           <div className="nes-field mt-8 mb-10">
             <label htmlFor="name_field" className="text-white text-left">Username</label>
             <input
@@ -42,65 +112,25 @@ function IndexPage() {
               id="name_field"
               className="nes-input is-dark w-full"
               placeholder="Enter your username"
-              defaultValue={username} // Pre-fill if user already set
+              value={inputUsername}
+              onChange={(e) => setInputUsername(e.target.value)}
+              disabled={isCreatingRoom}
             />
           </div>
 
-          <div
-            className="mt-8 flex flex-col items-center space-y-6"
-            tabIndex={-1}
-          >
-            <label className="flex items-center space-x-4 is-pointer">
+          <div className="mt-8 flex flex-col items-center space-y-6" tabIndex={-1}>
+            <label className="flex items-center space-x-4 cursor-pointer">
               <input
                 type="radio"
                 className="nes-radio"
                 name="room-action"
                 tabIndex={0}
-                onClick={async () => {
-                  const input = document.getElementById('name_field') as HTMLInputElement
-                  const inputUsername = input?.value?.trim()
-                  if (!inputUsername) {
-                    alert('Please enter a username')
-                    return
-                  }
-
-                  console.log('🚀 Creating room with username:', inputUsername)
-
-                  try {
-                    // ⛳️ Espera la respuesta del backend - debe incluir userId
-                    const res: any = await postCreateRoom({ username: inputUsername })
-
-                    console.log('✅ Create room response:', res)
-
-                    // El backend debe devolver tanto roomCode como userId
-                    const roomCode = res?.roomCode ?? res?.code
-                    const userId = res?.userId ?? res?.id ?? res?.leaderId
-
-                    if (!roomCode) {
-                      console.error('❌ No roomCode in response:', res)
-                      alert('Error: No room code received')
-                      return
-                    }
-
-                    if (!userId) {
-                      console.error('❌ No userId in response:', res)
-                      alert('Error: No user ID received')
-                      return
-                    }
-
-                    // ✅ Ahora sí tenemos el ID real del usuario
-                    console.log('👤 Setting user:', userId, inputUsername)
-                    setUser(userId, inputUsername)
-
-                    // Navigate to the game
-                    router.navigate({ to: '/room/$code/play', params: { code: roomCode } })
-                  } catch (e) {
-                    console.error('❌ Error creating room:', e)
-                    alert('Error creating room. Please try again.')
-                  }
-                }}
+                disabled={isCreatingRoom}
+                onClick={handleCreateRoom}
               />
-              <span className="font-press-start text-white text-sm">Create room</span>
+              <span className={`font-press-start text-white text-sm ${isCreatingRoom ? 'opacity-50' : ''}`}>
+                {isCreatingRoom ? 'Creating...' : 'Create room'}
+              </span>
             </label>
 
             <label className="flex items-center space-x-4 is-pointer">
@@ -109,23 +139,12 @@ function IndexPage() {
                 className="nes-radio"
                 name="room-action"
                 tabIndex={0}
-                onClick={() => {
-                  const input = document.getElementById('name_field') as HTMLInputElement
-                  const inputUsername = input?.value?.trim()
-
-                  if (!inputUsername) {
-                    alert('Please enter a username')
-                    return
-                  }
-
-                  // Para join, también necesitarás el ID del usuario después del join
-                  // Por ahora, establecemos un ID temporal
-                  console.log('👤 Setting temporary user for join:', inputUsername)
-                  setUser(-1, inputUsername) // ID temporal, se actualizará al hacer join
-                  router.navigate({ to: '/join' })
-                }}
+                disabled={isCreatingRoom}
+                onClick={handleJoinRoom}
               />
-              <span className="font-press-start text-white text-sm">Join room</span>
+              <span className={`font-press-start text-white text-sm ${isCreatingRoom ? 'opacity-50' : ''}`}>
+                Join room
+              </span>
             </label>
           </div>
         </div>
