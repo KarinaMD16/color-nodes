@@ -22,7 +22,7 @@ root.render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <UserProvider>
-        <RouterProvider router={router} />
+          <RouterProvider router={router} />
       </UserProvider>
     </QueryClientProvider>
   </React.StrictMode>
