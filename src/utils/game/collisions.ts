@@ -4,7 +4,11 @@ export function findNextNullRight(board: (string | null)[], fromIdx: number) {
 }
 
 export function findNextNullLeft(board: (string | null)[], fromIdx: number) {
-    for (let i = fromIdx - 1; i >= 0; i--) if (board[i] === null) return i
+    for (let i = fromIdx - 1; i >= 0; i--) {
+        if (board[i] === null) {
+            return i
+        }
+    }
     return -1
 }
 
@@ -13,9 +17,14 @@ export function insertWithDirectionalPushPure(
     toIdx: number,
     cupId: string,
     prefer: 'right' | 'left'
-    ): (string | null)[] {
+): (string | null)[] {
+
     const b = [...board]
-    if (b[toIdx] === null) { b[toIdx] = cupId; return b }
+
+    if (b[toIdx] === null) {
+        b[toIdx] = cupId;
+        return b
+    }
 
     const pushRight = () => {
         const r = findNextNullRight(b, toIdx)
@@ -24,22 +33,31 @@ export function insertWithDirectionalPushPure(
             b[toIdx] = cupId
             return b
         }
-        // sin hueco: empuja todo a la izquierda 
-        for (let i = 0; i < toIdx; i++) b[i] = b[i + 1]
-        b[toIdx] = cupId
+        // empuja todo a izquierda 
+        for (let i = 0; i < toIdx; i++) {
+            b[i] = b[i + 1]
+            b[toIdx] = cupId
+        }
+
         return b
     }
 
     const pushLeft = () => {
         const l = findNextNullLeft(b, toIdx)
+
         if (l !== -1) {
-            for (let i = l; i < toIdx; i++) b[i] = b[i + 1]
-            b[toIdx] = cupId
+            for (let i = l; i < toIdx; i++) {
+                b[i] = b[i + 1]
+                b[toIdx] = cupId
+            }
+
             return b
         }
-        // sin hueco: empuja todo a la derecha 
-        for (let i = b.length - 1; i > toIdx; i--) b[i] = b[i - 1]
-        b[toIdx] = cupId
+
+        for (let i = b.length - 1; i > toIdx; i--) {
+            b[i] = b[i - 1]
+            b[toIdx] = cupId
+        }
         return b
     }
 
