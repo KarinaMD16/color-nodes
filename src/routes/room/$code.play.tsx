@@ -3,7 +3,6 @@ import { rootRoute } from '../__root'
 import bgImage from '../../assets/orig.png'
 import { useUser } from '../../context/userContext'
 import { useGameHub } from '../../hooks/useGameHub'
-import type { GameStateResponse } from '@/models/game'
 import CupPixelStraw from '@/components/CupPixelStraw'
 import { SpectatorOverlay } from '@/utils/spec'
 import { motion } from 'framer-motion'
@@ -11,9 +10,8 @@ import { Trophy } from 'lucide-react'
 import { useSwap } from '@/hooks/useSwap'
 import { useAnimatedCups } from '@/hooks/useAnimateCups'
 import { useStartGameWithWatchdog } from '@/hooks/useStartGame'
-import { useRef } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
 import SetUpPhase from '@/components/game/SetUpPhase'
+import PantallaFondo from '@/components/PantallaFondo'
 
 export const playRoute = createRoute({
   component: PlayPage,
@@ -24,42 +22,40 @@ export const playRoute = createRoute({
 function PlayPage() {
   const { code } = playRoute.useParams()
   const roomCode = code
-  const { id: userId, username } = useUser()
+  const { id: userId } = useUser()
+  const ready = !!roomCode && !!userId
 
-  const { game, setGame, start, startStuck } = useStartGameWithWatchdog(roomCode, userId ?? 0)
+  const { game, setGame, start } = useStartGameWithWatchdog(
+    ready ? roomCode : "",
+    ready ? userId : 0
+  )
 
   useGameHub(roomCode, game?.gameId, setGame)
 
   const { items, isAnimating } = useAnimatedCups(game?.cups)
-
   const { isMyTurn, selectedSlot, handleSlotClick, swapMove } =
     useSwap(game, userId ?? 0, setGame, isAnimating)
 
-  const startedRef = useRef(false)
-  const queryClient = useQueryClient()
+  if (!ready) {
+    return <PantallaFondo texto="Obteniendo usuario..." />
+  }
 
-if (!game) {
-  return (
-    <div className="relative w-full min-h-screen bg-black">
-      <div className="fixed inset-0 w-full h-full bg-cover bg-center flex justify-center items-center" style={{ backgroundImage: `url(${bgImage})` }}>
-        <div className="bg-black/70 p-8 rounded-lg w-[min(92vw,700px)]">
-          <h1 className="text-white font-bold text-lg text-center mb-6">
-            {start.isPending ? 'Starting Game...' : 'Connecting to Game...'}
-          </h1>
-          {/* Simple loading animation */}
-            <div className="flex justify-center mb-6">
-            <div className="animate-spin text-4xl">🎮</div>
-            </div>
-
-        </div>
-      </div>
-    </div>
-  )
-}
+  if (!game) {
+    return (
+      <PantallaFondo
+        texto={start?.isPending ? 'Starting Game...' : 'Connecting to Game...'}
+      />
+    )
+  }
 
   if (game.status === 'Setup') {
     return (
-      <SetUpPhase/>
+      <SetUpPhase
+        game={game}
+        setGame={setGame}
+        isMyTurn={isMyTurn}
+        isAnimating={isAnimating}
+      />
     )
   }
 

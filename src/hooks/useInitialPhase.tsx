@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { hasDuplicateColors } from "@/utils/dupeColor"
 import { usePlaceInitial } from "@/hooks/gameHooks"
 import type { GameStateResponse } from "@/models/game"
@@ -13,6 +13,10 @@ export function useInitialPhase(game: GameStateResponse | null, userId: number, 
   const usedColors = useMemo(() => new Set(draft.filter(Boolean) as string[]), [draft])
   const canConfirm = draft.every(Boolean) && !hasDuplicateColors(draft)
 
+  const applyDraft = useCallback((next: (string | null)[]) => {
+    setDraft(next);
+  }, []);
+  
   const handlePick = (hex: string) => { if (!usedColors.has(hex)) setPickedColor(hex) }
   const handlePlaceAt = (idx: number) => {
     if (!pickedColor || usedColors.has(pickedColor)) return
@@ -37,5 +41,5 @@ export function useInitialPhase(game: GameStateResponse | null, userId: number, 
     )
   }
 
-    return { draft, pickedColor, usedColors, canConfirm, placeInitial, handlePick, handlePlaceAt, handleRemoveAt, confirmInitial }
+  return { applyDraft, draft, pickedColor, usedColors, canConfirm, placeInitial, handlePick, handlePlaceAt, handleRemoveAt, confirmInitial }
 }
