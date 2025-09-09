@@ -12,13 +12,15 @@ import DraggableCup from "./DraggableCup"
 import DroppableSlot from "./DroppableSlot"
 import { SetUpPhaseProps } from '@/types/gameItems/items'
 import { insertAtWithNearestHole, moveWithinBoardNearest } from '@/utils/game/collisions'
-import { motion, LayoutGroup } from 'framer-motion'
+import { motion, LayoutGroup, AnimatePresence } from 'framer-motion'
 import { cupVariants, LAYOUT_SPRING, useBumps } from '@/utils/game/animations'
 
 const CUP_SIZE = 100
 
 const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [overlayId, setOverlayId] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
   const { bumpById, triggerBumps } = useBumps()
   const {
     draft,
@@ -73,11 +75,19 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                   sensors={sensors}
                   collisionDetection={pointerWithin}
                   onDragStart={({ active }) => {
-                    setActiveId(String(active.id))
+                    const id = String(active.id)
+                    setActiveId(id)
+                    setOverlayId(id)
+                    setIsDragging(true)
                   }}
-                  onDragCancel={() => setActiveId(null)}
-                  onDragEnd={({ active, over }) => {
+                  onDragCancel={() => {
                     setActiveId(null)
+                    setIsDragging(false) 
+                  }
+                  }
+                  onDragEnd={({ active, over }) => {
+                    setActiveId(null);
+                    setIsDragging(false);
                     if (!over) return
                     const id = String(active.id)
                     const overId = String(over.id)
@@ -123,7 +133,7 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                     {supplyColors.map((hex) => (
                       <div
                         key={`supply-${hex}`}
-                        className={activeId === hex ? 'opacity-0' : ''}
+                        className={(activeId === hex || overlayId === hex) ? "opacity-0" : ""}
                         title={`Color: ${hex}`}
                       >
                         <DraggableCup
@@ -173,7 +183,7 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                                           : "swap"
                                       : "idle"
                                   }
-                                  className={activeId === hex ? "opacity-0" : ""}
+                                  className={(activeId === hex || overlayId === hex) ? "opacity-0" : ""}
                                 >
                                 <DraggableCup
                                   id={hex}
@@ -198,7 +208,26 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                       easing: 'cubic-bezier(0.2, 0, 0, 1)',
                     }}
                   >
-                    {activeId ? <CupPixelStraw size={CUP_SIZE} colors={{ body: activeId }} /> : null}
+                    <AnimatePresence onExitComplete={() => setOverlayId(null)}>
+                      {overlayId && (
+                        <motion.div
+                          key={overlayId}
+                          style={{ transformOrigin: "bottom center", willChange: "transform", pointerEvents: "none" }}
+                          initial={{ rotate: 12, scale: 1.08 }}
+                          // 🔥 SE MANTIENE DE LADO mientras lo tienes agarrado
+                          animate={isDragging ? { rotate: 15, scale: 1.1 } : { rotate: 0, scale: 1 }}
+                          exit={{ rotate: 0, scale: 1 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 110,
+                            damping: 20,
+                            mass: 0.7,
+                          }}
+                        >
+                          <CupPixelStraw size={CUP_SIZE} colors={{ body: overlayId }} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </DragOverlay>
                 </DndContext>
 
