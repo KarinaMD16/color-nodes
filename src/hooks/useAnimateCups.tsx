@@ -1,34 +1,50 @@
-import { useEffect, useRef, useState, useMemo } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 export function useAnimatedCups(cups: string[] | null | undefined) {
   const [isAnimating, setIsAnimating] = useState(false)
-  const prevCupsRef = useRef<string[] | null>(null)
+
+  const sig = (cups ?? []).join('|')
+  const sigRef = useRef<string>('')
+
+  const queuesRef = useRef<Map<string, string[]>>(new Map())
+  const countersRef = useRef<Map<string, number>>(new Map())
 
   const items = useMemo(() => {
-    const counts = new Map<string, number>()
-    return (cups ?? []).map((hex) => {
-      const n = counts.get(hex) ?? 0
-      counts.set(hex, n + 1)
-      return { hex, id: `${hex}-${n}` } // ← seguimos con el mismo esquema que tu versión
-    })
-  }, [cups])
+    const nextQueues = new Map<string, string[]>()
+
+    const getStableId = (hex: string) => {
+      const prevQ = queuesRef.current.get(hex)
+      if (prevQ && prevQ.length) {
+        const id = prevQ.shift()!
+        const q = nextQueues.get(hex) ?? []
+        q.push(id)
+        nextQueues.set(hex, q)
+        return id
+      }
+      const n = countersRef.current.get(hex) ?? 0
+      countersRef.current.set(hex, n + 1)
+      const id = `${hex}#${n}`
+      const q = nextQueues.get(hex) ?? []
+      q.push(id)
+      nextQueues.set(hex, q)
+      return id
+    }
+
+    const list = (cups ?? []).map((hex) => ({ hex, id: getStableId(hex) }))
+    queuesRef.current = nextQueues
+    return list
+  }, [sig])
 
   useEffect(() => {
-    if (!cups) return
-    const prev = prevCupsRef.current
-    if (prev && prev.length === cups.length) {
-      const changed = cups.some((c, i) => c !== prev[i])
-      if (changed) {
-        setIsAnimating(true)
-        // ✅ ACTUALIZA EL PREV ANTES DE SALIR (clave)
-        prevCupsRef.current = [...cups]
-        const timer = setTimeout(() => setIsAnimating(false), 600)
-        return () => clearTimeout(timer)
-      }
+    const prev = sigRef.current
+    if (prev && prev !== sig) {
+      setIsAnimating(true)
+      sigRef.current = sig
+      const t = setTimeout(() => setIsAnimating(false), 600)
+      return () => clearTimeout(t)
     }
-    // para el primer render y cuando no hay cambios, guarda el snapshot
-    prevCupsRef.current = [...cups]
-  }, [cups])
+    sigRef.current = sig
+  }, [sig])
 
   return { items, isAnimating }
 }

@@ -11,7 +11,7 @@ import { useMemo, useState } from "react"
 import DraggableCup from "./DraggableCup"
 import DroppableSlot from "./DroppableSlot"
 import { SetUpPhaseProps } from '@/types/gameItems/items'
-import { insertTowardHole } from '@/utils/game/collisions'
+import { insertAtWithNearestHole, moveWithinBoardNearest } from '@/utils/game/collisions'
 import { motion, LayoutGroup } from 'framer-motion'
 import { cupVariants, LAYOUT_SPRING, useBumps } from '@/utils/game/animations'
 
@@ -88,7 +88,7 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                     // del supply al board
                     if (active.data.current?.from === 'supply') {
                       if (usedColors.has(id)) return
-                      const next = insertTowardHole(draft, toIdx, id)
+                      const next = insertAtWithNearestHole(draft, toIdx, id, 'right') 
                       triggerBumps(draft, next)
                       applyDraft(next)
                       return
@@ -99,7 +99,7 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                       const fromIdx = Number(active.data.current?.slotIndex)
                       if (fromIdx === toIdx) return
 
-                      // swap adyacente
+                      // ady
                       if (Math.abs(fromIdx - toIdx) === 1 && draft[fromIdx] && draft[toIdx]) {
                         const next = [...draft]
                           ;[next[fromIdx], next[toIdx]] = [next[toIdx], next[fromIdx]]
@@ -108,17 +108,16 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                         return
                       }
 
-                      // caso general: libera origen (crea el hueco) e inserta empujando hacia el hueco
-                      const current = [...draft]
-                      current[fromIdx] = null
-                      const next = insertTowardHole(current, toIdx, id)
+                      // no ady
+                      const id = String(active.id)
+                      const next = moveWithinBoardNearest(draft, fromIdx, toIdx, id)
                       triggerBumps(draft, next)
                       applyDraft(next)
                       return
                     }
                   }}
                 >
-                  {/* SUPPLY */}
+                  {/* ---------------- supply ---------------- */}
                   <h3 className="text-lg mb-3 mt-8">Available cups</h3>
                   <div className="flex gap-3 flex-wrap">
                     {supplyColors.map((hex) => (
@@ -143,7 +142,7 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                     ))}
                   </div>
 
-                  {/* BOARD */}
+                  {/* ---------------- board ---------------- */}
                   <LayoutGroup id="setup-board">
                     <div className="grid grid-cols-6 gap-4 max-w-full mx-auto mt-8">
                       {draft.map((hex, idx) => (
@@ -155,7 +154,7 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                               if (hex && !activeId) {
                                 const next = [...draft]
                                 next[idx] = null
-                                triggerBumps(draft, next)  // 👈 pequeña animación “liberar”
+                                triggerBumps(draft, next) 
                                 applyDraft(next)
                               }
                             }}

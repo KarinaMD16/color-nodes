@@ -3,7 +3,7 @@ import { useUser } from '@/context/userContext'
 import { useAnimatedCups } from '@/hooks/useAnimateCups'
 import { useSwap } from '@/hooks/useSwap'
 import { SpectatorOverlay } from '@/utils/spec'
-import { motion } from 'framer-motion'
+import { motion, LayoutGroup } from 'framer-motion'
 import { Trophy } from 'lucide-react'
 import CupPixelStraw from '../CupPixelStraw'
 import type { GamePhaseProps } from '@/types/gameItems/items'
@@ -18,7 +18,7 @@ import {
 } from '@dnd-kit/core'
 import DraggableCup from './DraggableCup'
 import DroppableSlot from './DroppableSlot'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 const CUP_SIZE = 100
 
@@ -35,15 +35,34 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
 
   const [activeId, setActiveId] = useState<string | null>(null)
   const [activeHex, setActiveHex] = useState<string | null>(null)
-
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor)
   )
 
+  const [suppressMyMove, setSuppressMyMove] = useState(false)
+  const lastSigRef = useRef<string>('')
+
+  useEffect(() => {
+    const sig = (game.cups ?? []).join('|')
+    
+    if (sig !== lastSigRef.current) {
+      lastSigRef.current = sig
+      
+      if (suppressMyMove) {
+        queueMicrotask(() => setSuppressMyMove(false))
+      }
+    }
+  }, [game.cups, suppressMyMove])
+
   const sendSwap = async (fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return
-    if ('mutateAsync' in swapMove && typeof swapMove.mutateAsync === 'function') {
+    
+    if (isMyTurn) {
+      setSuppressMyMove(true)
+    }
+    
+    if ('mutateAsync' in swapMove && typeof (swapMove as any).mutateAsync === 'function') {
       await (swapMove as any).mutateAsync({ playerId, fromIndex, toIndex })
     } else {
       ;(swapMove as any).mutate({ playerId, fromIndex, toIndex })
@@ -58,7 +77,6 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
     >
       {board.map(({ id, hex }, idx) => {
         const isSelected = isMyTurn && selectedSlot === idx
-
         return (
           <DroppableSlot key={`slot-${idx}`} id={`slot-${idx}`}>
             <motion.button
@@ -73,13 +91,13 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
               whileTap={isMyTurn && !isAnimating ? { scale: 0.95 } : undefined}
             >
               <motion.div
-                layoutId={id} 
+                layoutId={!isMyTurn || !suppressMyMove ? id : undefined}
                 className={activeId === id ? 'opacity-0' : ''}
                 style={{ width: CUP_SIZE, height: CUP_SIZE, display: 'grid', placeItems: 'center' }}
               >
                 {isMyTurn && !swapMove.isPending && !isAnimating ? (
                   <DraggableCup
-                    id={id} // dnd-kit usa este id; coincide con layoutId
+                    id={id}
                     data={{ type: 'cup', from: 'board', slotIndex: idx, hex }}
                     activeId={activeId ?? undefined}
                   >
@@ -166,11 +184,13 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
                         setActiveHex(null)
                         return
                       }
-                      await sendSwap(fromIndex, toIndex) 
+                      await sendSwap(fromIndex, toIndex ) 
                       setActiveHex(null)
                     }}
                   >
-                    {grid}
+                    <LayoutGroup id="game-board">
+                      {grid}
+                    </LayoutGroup>
 
                     <DragOverlay
                       dropAnimation={{
@@ -178,11 +198,16 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
                         easing: 'cubic-bezier(0.2, 0, 0, 1)',
                       }}
                     >
-                      {activeHex ? <CupPixelStraw size={CUP_SIZE} colors={{ body: activeHex }} /> : null}
+                      {activeHex ? 
+                        <div className="transform rotate-12 scale-110">
+                            <CupPixelStraw size={CUP_SIZE} colors={{ body: activeHex }} /> 
+                        </div>: null}
                     </DragOverlay>
                   </DndContext>
                 ) : (
-                  grid
+                  <LayoutGroup id="game-board">
+                    {grid}
+                  </LayoutGroup>
                 )}
 
                 {!isMyTurn && (
