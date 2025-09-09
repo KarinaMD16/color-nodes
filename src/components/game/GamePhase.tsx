@@ -57,15 +57,11 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
 
   const sendSwap = async (fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return
-    
-    if (isMyTurn) {
-      setSuppressMyMove(true)
-    }
-    
-    if ('mutateAsync' in swapMove && typeof (swapMove as any).mutateAsync === 'function') {
-      await (swapMove as any).mutateAsync({ playerId, fromIndex, toIndex })
-    } else {
-      ;(swapMove as any).mutate({ playerId, fromIndex, toIndex })
+    if (isMyTurn) setSuppressMyMove(true)
+
+    try {
+      await swapMove.mutateAsync({ playerId, fromIndex, toIndex })
+    } finally {
     }
   }
 
@@ -163,10 +159,12 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
                       const hex = (active.data.current as any)?.hex as string | undefined
                       if (hex) setActiveHex(hex)
                     }}
+
                     onDragCancel={() => {
                       setActiveId(null)
                       setActiveHex(null)
                     }}
+
                     onDragEnd={async ({ active, over }) => {
                       setActiveId(null)
                       if (!over || swapMove.isPending || isAnimating) {
