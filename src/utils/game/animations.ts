@@ -49,7 +49,7 @@ export function useBumps() {
             }
         }
 
-        // resto: dirección del movimiento
+        // direccion del movimiento
         moves.forEach((m) => {
             if (!map[m.id]) map[m.id] = m.to > m.from ? "right" : "left"
         })

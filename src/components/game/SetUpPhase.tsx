@@ -5,7 +5,8 @@ import { hasDuplicateColors } from "@/utils/dupeColor"
 import CupPixelStraw from "../CupPixelStraw"
 import {
   useSensors, useSensor, PointerSensor, TouchSensor,
-  DndContext, DragOverlay, pointerWithin
+  DndContext, DragOverlay,
+  closestCenter
 } from "@dnd-kit/core"
 import { useMemo, useState } from "react"
 import DraggableCup from "./DraggableCup"
@@ -15,12 +16,13 @@ import { insertAtWithNearestHole, moveWithinBoardNearest } from '@/utils/game/co
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion'
 import { cupVariants, LAYOUT_SPRING, useBumps } from '@/utils/game/animations'
 
-const CUP_SIZE = 110
+const CUP_SIZE = 100
 
 const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overlayId, setOverlayId] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  
   const { bumpById, triggerBumps } = useBumps()
   const {
     draft,
@@ -73,21 +75,24 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
               <>
                 <DndContext
                   sensors={sensors}
-                  collisionDetection={pointerWithin}
+                  collisionDetection={closestCenter}
+
                   onDragStart={({ active }) => {
                     const id = String(active.id)
                     setActiveId(id)
                     setOverlayId(id)
                     setIsDragging(true)
                   }}
+
                   onDragCancel={() => {
                     setActiveId(null)
                     setIsDragging(false) 
-                  }
-                  }
+                  }}
+
                   onDragEnd={({ active, over }) => {
                     setActiveId(null);
                     setIsDragging(false);
+                    
                     if (!over) return
                     const id = String(active.id)
                     const overId = String(over.id)
@@ -98,9 +103,9 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                     // del supply al board
                     if (active.data.current?.from === 'supply') {
                       if (usedColors.has(id)) return
-                      const next = insertAtWithNearestHole(draft, toIdx, id, 'right') 
-                      triggerBumps(draft, next)
-                      applyDraft(next)
+                      const next = insertAtWithNearestHole(draft, toIdx, id, 'right');
+                      triggerBumps(draft, next);
+                      applyDraft(next);
                       return
                     }
 
@@ -111,8 +116,8 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
 
                       // ady
                       if (Math.abs(fromIdx - toIdx) === 1 && draft[fromIdx] && draft[toIdx]) {
-                        const next = [...draft]
-                          ;[next[fromIdx], next[toIdx]] = [next[toIdx], next[fromIdx]]
+                        const next = [...draft];
+                        [next[fromIdx], next[toIdx]] = [next[toIdx], next[fromIdx]]
                         triggerBumps(draft, next)
                         applyDraft(next)
                         return
@@ -133,18 +138,15 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                     {supplyColors.map((hex) => (
                       <div
                         key={`supply-${hex}`}
-                        className={(activeId === hex || overlayId === hex) ? "opacity-0" : ""}
+                        className={activeId === hex ? 'opacity-0' : ''}
                         title={`Color: ${hex}`}
                       >
                         <DraggableCup
                           id={hex}
                           data={{ type: 'cup', from: 'supply' }}
-                          activeId={activeId ?? undefined}
-                        >
-                          <div
-                            className="inline-flex items-center justify-center"
-                            style={{ width: CUP_SIZE, height: CUP_SIZE }}
-                          >
+                          activeId={activeId ?? undefined}>
+                          <div className="inline-flex items-center justify-center"
+                            style={{ width: CUP_SIZE, height: CUP_SIZE }}>
                             <CupPixelStraw size={CUP_SIZE} colors={{ body: hex }} />
                           </div>
                         </DraggableCup>
@@ -167,8 +169,7 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                                 triggerBumps(draft, next) 
                                 applyDraft(next)
                               }
-                            }}
-                          >
+                            }}>
                             {hex ? (
                               <motion.div
                                   layout
@@ -183,7 +184,7 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                                           : "swap"
                                       : "idle"
                                   }
-                                  className={(activeId === hex || overlayId === hex) ? "opacity-0" : ""}
+                                  className={activeId === hex ? "opacity-0" : ""}
                                 >
                                 <DraggableCup
                                   id={hex}
@@ -214,7 +215,6 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                           key={overlayId}
                           style={{ transformOrigin: "bottom center", willChange: "transform", pointerEvents: "none" }}
                           initial={{ rotate: 12, scale: 1.08 }}
-                          // 🔥 SE MANTIENE DE LADO mientras lo tienes agarrado
                           animate={isDragging ? { rotate: 15, scale: 1.1 } : { rotate: 0, scale: 1 }}
                           exit={{ rotate: 0, scale: 1 }}
                           transition={{

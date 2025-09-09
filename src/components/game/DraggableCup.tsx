@@ -2,6 +2,7 @@ import { DraggableCupProps } from '@/types/gameItems/items'
 import { useDraggable } from '@dnd-kit/core'
 
 const DraggableCup = ({ id, children, data,activeId }: DraggableCupProps) => {
+  
     const { attributes, listeners, setNodeRef, transform } = useDraggable({ id, data })
     
     const style = transform
