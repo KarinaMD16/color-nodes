@@ -20,7 +20,7 @@ import DraggableCup from './DraggableCup'
 import DroppableSlot from './DroppableSlot'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-const CUP_SIZE = 100
+const CUP_SIZE = 110
 
 const GamePhase = ({ game, setGame }: GamePhaseProps) => {
   const { id: userId } = useUser()

@@ -15,7 +15,7 @@ import { insertAtWithNearestHole, moveWithinBoardNearest } from '@/utils/game/co
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion'
 import { cupVariants, LAYOUT_SPRING, useBumps } from '@/utils/game/animations'
 
-const CUP_SIZE = 100
+const CUP_SIZE = 110
 
 const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
