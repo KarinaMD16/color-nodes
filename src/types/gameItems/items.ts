@@ -19,3 +19,7 @@ export type SetUpPhaseProps = {
   isMyTurn: boolean
   isAnimating: boolean
 }
+export type GamePhaseProps = {
+  game: GameStateResponse
+  setGame: (g: GameStateResponse) => void
+}

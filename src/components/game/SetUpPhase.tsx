@@ -11,14 +11,15 @@ import { useMemo, useState } from "react"
 import DraggableCup from "./DraggableCup"
 import DroppableSlot from "./DroppableSlot"
 import { SetUpPhaseProps } from '@/types/gameItems/items'
-import { insertWithDirectionalPushPure } from '@/utils/game/collisions'
+import { insertTowardHole } from '@/utils/game/collisions'
+import { motion, LayoutGroup } from 'framer-motion'
+import { cupVariants, LAYOUT_SPRING, useBumps } from '@/utils/game/animations'
 
-
-const CUP_SIZE = 80
+const CUP_SIZE = 100
 
 const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
-  const [activeId, setActiveId] = useState<string | null>(null)
-
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const { bumpById, triggerBumps } = useBumps()
   const {
     draft,
     canConfirm,
@@ -87,32 +88,31 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                     // del supply al board
                     if (active.data.current?.from === 'supply') {
                       if (usedColors.has(id)) return
-                      const next = insertWithDirectionalPushPure(draft, toIdx, id, 'right')
+                      const next = insertTowardHole(draft, toIdx, id)
+                      triggerBumps(draft, next)
                       applyDraft(next)
                       return
                     }
 
                     // del board al board 
-                    if (active.data.current?.from === 'board' && overId.startsWith('slot-')) {
+                    if (active.data.current?.from === 'board') {
                       const fromIdx = Number(active.data.current?.slotIndex)
-                      const toIdx = Number(overId.split('-')[1])
                       if (fromIdx === toIdx) return
 
-                      // adyc
+                      // swap adyacente
                       if (Math.abs(fromIdx - toIdx) === 1 && draft[fromIdx] && draft[toIdx]) {
                         const next = [...draft]
-                        const tmp = next[fromIdx]
-                        next[fromIdx] = next[toIdx]
-                        next[toIdx] = tmp
+                          ;[next[fromIdx], next[toIdx]] = [next[toIdx], next[fromIdx]]
+                        triggerBumps(draft, next)
                         applyDraft(next)
                         return
                       }
 
-                      // no ady
+                      // caso general: libera origen (crea el hueco) e inserta empujando hacia el hueco
                       const current = [...draft]
-                      current[fromIdx] = null 
-                      const prefer: 'right' | 'left' = fromIdx < toIdx ? 'right' : 'left'
-                      const next = insertWithDirectionalPushPure(current, toIdx, String(active.id), prefer)
+                      current[fromIdx] = null
+                      const next = insertTowardHole(current, toIdx, id)
+                      triggerBumps(draft, next)
                       applyDraft(next)
                       return
                     }
@@ -144,40 +144,61 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                   </div>
 
                   {/* BOARD */}
-                  <div className="grid grid-cols-6 gap-4 max-w-full mx-auto mt-8">
-                    {draft.map((hex, idx) => (
-                      <DroppableSlot key={`slot-${idx}`} id={`slot-${idx}`}>
-                        <div
-                          className="inline-flex items-center justify-center transition-all"
-                          style={{ width: CUP_SIZE, height: CUP_SIZE }}
-                          onClick={() => {
-                            if (hex && !activeId) {
-                              const next = [...draft]
-                              next[idx] = null
-                              applyDraft(next)
-                            }
-                          }}
-                        >
-                          {hex ? (
-                            <div className={activeId === hex ? 'opacity-0' : ''}>
-                              <DraggableCup
-                                key={`board-${hex}`}
-                                id={hex}
-                                data={{ type: 'cup', from: 'board', slotIndex: idx }}
-                                activeId={activeId ?? undefined}
-                              >
-                                <CupPixelStraw size={CUP_SIZE} colors={{ body: hex }} />
-                              </DraggableCup>
-                            </div>
-                          ) : (
-                            <span className="text-xs opacity-60 select-none">{idx + 1}</span>
-                          )}
-                        </div>
-                      </DroppableSlot>
-                    ))}
-                  </div>
+                  <LayoutGroup id="setup-board">
+                    <div className="grid grid-cols-6 gap-4 max-w-full mx-auto mt-8">
+                      {draft.map((hex, idx) => (
+                        <DroppableSlot key={`slot-${idx}`} id={`slot-${idx}`}>
+                          <div
+                            className="inline-flex items-center justify-center transition-all"
+                            style={{ width: CUP_SIZE, height: CUP_SIZE }}
+                            onClick={() => {
+                              if (hex && !activeId) {
+                                const next = [...draft]
+                                next[idx] = null
+                                triggerBumps(draft, next)  // 👈 pequeña animación “liberar”
+                                applyDraft(next)
+                              }
+                            }}
+                          >
+                            {hex ? (
+                              <motion.div
+                                  layout
+                                  transition={LAYOUT_SPRING}
+                                  variants={cupVariants}
+                                  animate={
+                                    bumpById[hex]
+                                      ? bumpById[hex] === "left"
+                                        ? "bump_left"
+                                        : bumpById[hex] === "right"
+                                          ? "bump_right"
+                                          : "swap"
+                                      : "idle"
+                                  }
+                                  className={activeId === hex ? "opacity-0" : ""}
+                                >
+                                <DraggableCup
+                                  id={hex}
+                                  data={{ type: 'cup', from: 'board', slotIndex: idx }}
+                                  activeId={activeId ?? undefined}
+                                >
+                                  <CupPixelStraw size={CUP_SIZE} colors={{ body: hex }} />
+                                </DraggableCup>
+                              </motion.div>
+                            ) : (
+                              <span className="text-xs opacity-60 select-none">{idx + 1}</span>
+                            )}
+                          </div>
+                        </DroppableSlot>
+                      ))}
+                    </div>
+                  </LayoutGroup>
 
-                  <DragOverlay>
+                  <DragOverlay
+                    dropAnimation={{
+                      duration: 180,
+                      easing: 'cubic-bezier(0.2, 0, 0, 1)',
+                    }}
+                  >
                     {activeId ? <CupPixelStraw size={CUP_SIZE} colors={{ body: activeId }} /> : null}
                   </DragOverlay>
                 </DndContext>

@@ -9,7 +9,7 @@ export function useAnimatedCups(cups: string[] | null | undefined) {
     return (cups ?? []).map((hex) => {
       const n = counts.get(hex) ?? 0
       counts.set(hex, n + 1)
-      return { hex, id: `${hex}-${n}` }
+      return { hex, id: `${hex}-${n}` } // ← seguimos con el mismo esquema que tu versión
     })
   }, [cups])
 
@@ -20,10 +20,13 @@ export function useAnimatedCups(cups: string[] | null | undefined) {
       const changed = cups.some((c, i) => c !== prev[i])
       if (changed) {
         setIsAnimating(true)
+        // ✅ ACTUALIZA EL PREV ANTES DE SALIR (clave)
+        prevCupsRef.current = [...cups]
         const timer = setTimeout(() => setIsAnimating(false), 600)
         return () => clearTimeout(timer)
       }
     }
+    // para el primer render y cuando no hay cambios, guarda el snapshot
     prevCupsRef.current = [...cups]
   }, [cups])
 
