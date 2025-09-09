@@ -7,16 +7,94 @@ import { motion } from 'framer-motion'
 import { Trophy } from 'lucide-react'
 import CupPixelStraw from '../CupPixelStraw'
 import type { GamePhaseProps } from '@/types/gameItems/items'
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  pointerWithin,
+} from '@dnd-kit/core'
+import DraggableCup from './DraggableCup'
+import DroppableSlot from './DroppableSlot'
+import { useMemo, useState } from 'react'
+
+const CUP_SIZE = 100
 
 const GamePhase = ({ game, setGame }: GamePhaseProps) => {
   const { id: userId } = useUser()
+  const playerId = Number(userId) || 0
 
-  // Animación de layout (cambios suaves al reordenar desde SignalR/acciones)
   const { items, isAnimating } = useAnimatedCups(game?.cups ?? [])
 
-  // Lógica de turno + swap por click (tu hook)
   const { isMyTurn, selectedSlot, handleSlotClick, swapMove } =
-    useSwap(game, userId ?? 0, setGame, isAnimating)
+    useSwap(game, playerId, setGame, isAnimating)
+
+  const board = useMemo(() => items.map((it) => ({ id: it.id, hex: it.hex })), [items])
+
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [activeHex, setActiveHex] = useState<string | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor)
+  )
+
+  const sendSwap = async (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return
+    if ('mutateAsync' in swapMove && typeof swapMove.mutateAsync === 'function') {
+      await (swapMove as any).mutateAsync({ playerId, fromIndex, toIndex })
+    } else {
+      ;(swapMove as any).mutate({ playerId, fromIndex, toIndex })
+    }
+  }
+
+  const grid = (
+    <motion.div
+      layout
+      className="grid grid-cols-6 gap-4 max-w-full mx-auto rounded-xl"
+      transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+    >
+      {board.map(({ id, hex }, idx) => {
+        const isSelected = isMyTurn && selectedSlot === idx
+
+        return (
+          <DroppableSlot key={`slot-${idx}`} id={`slot-${idx}`}>
+            <motion.button
+              layout
+              disabled={!isMyTurn || swapMove.isPending || isAnimating}
+              onClick={() => isMyTurn && handleSlotClick(idx)}
+              className={[
+                'aspect-square w-40 h-40 flex items-center justify-center rounded-xl transition-colors border-none',
+                isSelected ? 'bg-white/20' : 'bg-transparent',
+              ].join(' ')}
+              whileHover={isMyTurn && !isAnimating ? { scale: 1.05 } : undefined}
+              whileTap={isMyTurn && !isAnimating ? { scale: 0.95 } : undefined}
+            >
+              <motion.div
+                layoutId={id} 
+                className={activeId === id ? 'opacity-0' : ''}
+                style={{ width: CUP_SIZE, height: CUP_SIZE, display: 'grid', placeItems: 'center' }}
+              >
+                {isMyTurn && !swapMove.isPending && !isAnimating ? (
+                  <DraggableCup
+                    id={id} // dnd-kit usa este id; coincide con layoutId
+                    data={{ type: 'cup', from: 'board', slotIndex: idx, hex }}
+                    activeId={activeId ?? undefined}
+                  >
+                    <CupPixelStraw size={CUP_SIZE} colors={{ body: hex }} />
+                  </DraggableCup>
+                ) : (
+                  <CupPixelStraw size={CUP_SIZE} colors={{ body: hex }} />
+                )}
+              </motion.div>
+            </motion.button>
+          </DroppableSlot>
+        )
+      })}
+    </motion.div>
+  )
 
   return (
     <div className="relative w-full min-h-screen bg-black">
@@ -27,18 +105,14 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
         <div className="min-h-screen bg-black/50 text-white p-6">
           <div className="max-w-full mx-auto">
 
-            {/* Header */}
             <div className="flex justify-between">
-              <h2 className="text-xl mb-4">
-                Game in progress
-              </h2>
+              <h2 className="text-xl mb-4">Game in progress</h2>
               <div className="flex flex-col items-end">
                 <span className="text-xs text-white/70">Room code</span>
                 <span className="font-mono">{game.roomCode}</span>
               </div>
             </div>
 
-            {/* Estado */}
             <div className="mb-6 p-4 bg-white/10 rounded-lg space-y-2">
               <div className="flex justify-between items-center">
                 <span className={isMyTurn ? 'text-emerald-400 font-semibold' : 'text-orange-400'}>
@@ -53,47 +127,69 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
                 </span>
                 {game.hits === 6 && (
                   <span className="text-yellow-400 font-bold inline-flex items-center gap-2">
-                    <Trophy size={18}/> You won!
+                    <Trophy size={18} /> You won!
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Tablero */}
             <div className="mb-8">
               <div className="relative">
-                <motion.div
-                  layout
-                  className="grid grid-cols-6 gap-4 max-w-full mx-auto rounded-xl"
-                  transition={{ type: 'spring', stiffness: 400, damping: 26 }}
-                >
-                  {items.map(({ hex, id }, idx) => {
-                    const isSelected = isMyTurn && selectedSlot === idx
-                    return (
-                      <motion.button
-                        key={id}
-                        layout
-                        disabled={!isMyTurn || swapMove.isPending || isAnimating}
-                        onClick={() => isMyTurn && handleSlotClick(idx)}
-                        className={[
-                          'aspect-square w-40 h-40 flex items-center justify-center rounded-xl transition-colors border-none',
-                          isSelected ? 'bg-white/20' : 'bg-transparent'
-                        ].join(' ')}
-                        whileHover={isMyTurn && !isAnimating ? { scale: 1.05 } : undefined}
-                        whileTap={isMyTurn && !isAnimating ? { scale: 0.95 } : undefined}
-                      >
-                        <CupPixelStraw colors={{ body: hex }} />
-                      </motion.button>
-                    )
-                  })}
-                </motion.div>
+                {isMyTurn ? (
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={pointerWithin}
+                    onDragStart={({ active }) => {
+                      if (swapMove.isPending || isAnimating) return
+                      setActiveId(String(active.id))
+                      const hex = (active.data.current as any)?.hex as string | undefined
+                      if (hex) setActiveHex(hex)
+                    }}
+                    onDragCancel={() => {
+                      setActiveId(null)
+                      setActiveHex(null)
+                    }}
+                    onDragEnd={async ({ active, over }) => {
+                      setActiveId(null)
+                      if (!over || swapMove.isPending || isAnimating) {
+                        setActiveHex(null)
+                        return
+                      }
+                      const overId = String(over.id)
+                      if (!overId.startsWith('slot-')) {
+                        setActiveHex(null)
+                        return
+                      }
+                      const fromIndex = Number((active.data.current as any)?.slotIndex)
+                      const toIndex = Number(overId.split('-')[1])
+                      if (Number.isNaN(fromIndex) || Number.isNaN(toIndex) || fromIndex === toIndex) {
+                        setActiveHex(null)
+                        return
+                      }
+                      await sendSwap(fromIndex, toIndex) 
+                      setActiveHex(null)
+                    }}
+                  >
+                    {grid}
+
+                    <DragOverlay
+                      dropAnimation={{
+                        duration: 180,
+                        easing: 'cubic-bezier(0.2, 0, 0, 1)',
+                      }}
+                    >
+                      {activeHex ? <CupPixelStraw size={CUP_SIZE} colors={{ body: activeHex }} /> : null}
+                    </DragOverlay>
+                  </DndContext>
+                ) : (
+                  grid
+                )}
 
                 {!isMyTurn && (
                   <SpectatorOverlay text={`Turno del jugador ${game.currentPlayerId}`} />
                 )}
               </div>
 
-              {/* Mensajito de ayuda */}
               {isMyTurn ? (
                 selectedSlot !== null ? (
                   <div className="text-center text-sm text-cyan-400 mt-3">
@@ -101,17 +197,14 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
                   </div>
                 ) : (
                   <p className="text-center text-sm text-white/60 mt-3">
-                    Click two cups to swap them.
+                    Click two cups to swap them or drag a cup onto another to swap.
                   </p>
                 )
               ) : (
-                <p className="text-center text-sm text-white/60 mt-3">
-                  Wait for your turn
-                </p>
+                <p className="text-center text-sm text-white/60 mt-3">Wait for your turn</p>
               )}
             </div>
 
-            {/* (opcional) patrón meta/objetivo como referencia visual, si aplica */}
             <div className="mb-6">
               <div className="grid grid-cols-6 max-w-full mx-auto opacity-75">
                 {Array.from({ length: 6 }).map((_, idx) => (
@@ -122,7 +215,6 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
               </div>
             </div>
 
-            {/* Estado de movimiento */}
             {(swapMove.isPending || isAnimating) && (
               <div className="mt-8 p-4 bg-white/5 rounded-lg text-sm text-white/70">
                 <div className="mt-2 text-yellow-400 text-sm">
