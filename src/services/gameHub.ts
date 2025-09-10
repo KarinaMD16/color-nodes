@@ -19,41 +19,62 @@ export function createGameHub(roomCode: string, username: string, h: Handlers = 
     .withAutomaticReconnect({ nextRetryDelayInMilliseconds: () => 2000 })
     .build();
 
-  connection.on('StateUpdated', (s: GameStateResponse) => h.onStateUpdated?.(s));
-  connection.on('HitFeedback', (p) => h.onHitFeedback?.(p));
-  connection.on('TurnChanged', (p) => h.onTurnChanged?.(p));
-  connection.on('GameFinished', (p) => h.onFinished?.(p));
-
+  connection.on('stateUpdated', (s: GameStateResponse) => h.onStateUpdated?.(s));
+  connection.on('hitFeedback', (p) => h.onHitFeedback?.(p));
+  connection.on('turnChanged', (p) => h.onTurnChanged?.(p));
+  connection.on('finished', (p) => h.onFinished?.(p));
   connection.on('PlayerJoined', (u: string) => h.onPlayerJoined?.(u));
   connection.on('PlayerLeft', (u: string) => h.onPlayerLeft?.(u));
-
   connection.onreconnecting(() => h.onConn?.('reconnecting'));
+
   connection.onreconnected(async () => {
     h.onConn?.('connected');
     await joinRoom(); 
     if (lastJoinedGameId) await joinGame(lastJoinedGameId);
-  });
+  });  
   connection.onclose(() => h.onConn?.('disconnected'));
 
   let lastJoinedGameId: string | null = null;
 
   async function joinRoom() {
-    await connection.invoke('JoinRoom', roomCode, username);
+    try {
+      await connection.invoke('JoinRoom', roomCode, username);
+    } catch (error) {
+      console.error('❌ Error joining room:', error)
+      throw error
+    }
   }
 
   async function joinGame(gameId: string) {
-    lastJoinedGameId = gameId;
-    await connection.invoke('JoinGame', gameId);
+    try {
+      lastJoinedGameId = gameId;
+      await connection.invoke('JoinGame', gameId);
+    } catch (error) {
+      console.error('❌ Error joining game:', error)
+      throw error
+    }
   }
 
   async function start() {
-    await connection.start();
-    h.onConn?.('connected');
-    await joinRoom(); 
+    try {
+      await connection.start();
+      h.onConn?.('connected');
+      await joinRoom(); 
+    } catch (error) {
+      h.onConn?.('disconnected')
+      throw error
+    }
   }
 
   async function stop() {
-    await connection.stop();
+    try {
+      if (lastJoinedGameId) {
+        await connection.invoke('LeaveGame', lastJoinedGameId);
+      }
+      await connection.stop();
+    } catch (error) {
+      console.error('❌ Error stopping SignalR:', error)
+    }
   }
 
   return { connection, start, stop, joinGame };

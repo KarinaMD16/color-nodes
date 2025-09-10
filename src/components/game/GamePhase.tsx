@@ -19,6 +19,8 @@ import {
 import DraggableCup from './DraggableCup'
 import DroppableSlot from './DroppableSlot'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { AVATAR_SEEDS, Player } from '@/types/PlayerTypes'
+import { PlayersList } from './PlaeyrList'
 
 const CUP_SIZE = 110
 
@@ -30,6 +32,18 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
 
   const { isMyTurn, selectedSlot, handleSlotClick, swapMove } =
     useSwap(game, playerId, setGame, isAnimating)
+
+    const players: Player[] = useMemo(() => {
+      if (!game?.playerOrder) return []
+
+      return game.playerOrder.map((playerId: number, index: number) => ({
+        id: playerId,                   
+        username: `Player ${playerId}`, 
+        isHost: index === 0,
+        avatar: AVATAR_SEEDS[index % AVATAR_SEEDS.length]
+      }))
+    }, [game?.playerOrder])
+
 
   const board = useMemo(() => items.map((it) => ({ id: it.id, hex: it.hex })), [items])
 
@@ -123,14 +137,21 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
               <h2 className="text-xl mb-4">Game in progress</h2>
               <div className="flex flex-col items-end">
                 <span className="text-xs text-white/70">Room code</span>
-                <span className="font-mono">{game.roomCode}</span>
+                <span className="font-mono text-lg">{game.roomCode}</span>
               </div>
             </div>
+
+            {/* Lista de jugadores con avatares */}
+            <PlayersList
+              players={players}
+              currentPlayerId={game.currentPlayerId}
+              myId={playerId}
+            />
 
             <div className="mb-6 p-4 bg-white/10 rounded-lg space-y-2">
               <div className="flex justify-between items-center">
                 <span className={isMyTurn ? 'text-emerald-400 font-semibold' : 'text-orange-400'}>
-                  {isMyTurn ? 'Your turn' : `Player ${game.currentPlayerId}'s turn`}
+                  {isMyTurn ? '🎯 Your Turn!' : `🎮 Player ${game.currentPlayerId}'s Turn`}
                 </span>
                 <span className="text-sm text-white/70">Moves: {game.totalMoves ?? 0}</span>
               </div>
@@ -216,15 +237,15 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
               {isMyTurn ? (
                 selectedSlot !== null ? (
                   <div className="text-center text-sm text-cyan-400 mt-3">
-                    Slot {selectedSlot + 1} selected. Click another to swap.
+                    ✨ Slot {selectedSlot + 1} selected. Click another to swap.
                   </div>
                 ) : (
                   <p className="text-center text-sm text-white/60 mt-3">
-                    Click two cups to swap them or drag a cup onto another to swap.
+                    🖱️ Click two cups to swap them or drag a cup onto another to swap.
                   </p>
                 )
               ) : (
-                <p className="text-center text-sm text-white/60 mt-3">Wait for your turn</p>
+                <p className="text-center text-sm text-white/60 mt-3">⏳ Wait for your turn</p>
               )}
             </div>
 
@@ -240,8 +261,9 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
 
             {(swapMove.isPending || isAnimating) && (
               <div className="mt-8 p-4 bg-white/5 rounded-lg text-sm text-white/70">
-                <div className="mt-2 text-yellow-400 text-sm">
-                  ⏳ {swapMove.isPending ? 'Processing swap…' : 'Moving cups…'}
+                <div className="mt-2 text-yellow-400 text-sm flex items-center gap-2">
+                  <span className="animate-spin">⏳</span>
+                  {swapMove.isPending ? 'Processing swap...' : 'Moving cups...'}
                 </div>
               </div>
             )}

@@ -10,7 +10,7 @@ export function useGameHub(
   onUpdate?: (s: GameStateResponse) => void
 ) {
   const qc = useQueryClient()
-  const { username } = useUser()
+  const { username, id: userId } = useUser()
   const hubRef = useRef<ReturnType<typeof createGameHub> | null>(null)
 
   useEffect(() => {
@@ -26,24 +26,29 @@ export function useGameHub(
         }
       },
       onTurnChanged: (p) => {
-        if (!gameId) return
+        if (!gameId) return      
         const prev = qc.getQueryData<GameStateResponse>(['game', gameId])
         if (prev) {
-          const patched = { ...prev, currentPlayerId: p.currentPlayerId }
+          const patched = { ...prev, currentPlayerId: p.currentPlayerId, turnEndsAtUtc: p.turnEndsAtUtc }
           qc.setQueryData(['game', gameId], patched)
           onUpdate?.(patched)
         }
+
+        if (p.currentPlayerId === userId) console.log('🎯 It\'s your turn!')
+        else console.log(`🎮 Player ${p.currentPlayerId}'s turn`)
       },
-      onHitFeedback: (p) => console.log('hit', p.message),
-      onFinished: (p) => console.log('fin juego', p),
-      onConn: (state) => console.log('hub', state),
+      onHitFeedback: (p) => console.log('🎯 Hit feedback:', p.message),
+      onFinished: (p) => console.log('🏆 Game finished:', p),
+      onConn: (state) => console.log('🔗 Hub connection:', state),
+      onPlayerJoined: (username) => console.log(`👋 ${username} joined the room`),
+      onPlayerLeft: (username) => console.log(`👋 ${username} left the room`)
     })
 
     hubRef.current = hub
     hub.start().catch(console.error)
 
     return () => { hub.stop().catch(console.error) }
-  }, [roomCode, gameId, username, qc, onUpdate])
+  }, [roomCode, username, userId, qc, onUpdate])
 
   useEffect(() => {
     if (!hubRef.current?.joinGame || !gameId) return

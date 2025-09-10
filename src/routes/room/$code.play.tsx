@@ -8,6 +8,9 @@ import { useStartGameWithWatchdog } from '@/hooks/useStartGame'
 import SetUpPhase from '@/components/game/SetUpPhase'
 import PantallaFondo from '@/components/PantallaFondo'
 import GamePhase from '@/components/game/GamePhase'
+import { useEffect, useState } from 'react'
+import { useGameState } from '@/hooks/gameHooks'
+import { useGetRoom } from '@/hooks/userHooks'
 
 export const playRoute = createRoute({
   component: PlayPage,
@@ -20,34 +23,78 @@ function PlayPage() {
   const roomCode = code
   const { id: userId } = useUser()
   const ready = !!roomCode && !!userId
+  const [gameId, setGameId] = useState<string | null>(null)
+  const [shouldStartGame, setShouldStartGame] = useState(false)
+  
+  const { data: existingGame } = useGameState(gameId || undefined)
+  const { data: room } = useGetRoom(roomCode)
 
-  const { game, setGame, start } = useStartGameWithWatchdog(
-    ready ? roomCode : "",
-    ready ? userId : 0
+  // Lógica para decidir cuándo iniciar juego
+  useEffect(() => {
+    if (!ready) return
+
+    const storedGameId = localStorage.getItem(`game_${roomCode}`)
+    
+    if (storedGameId) {
+      setGameId(storedGameId)
+      setShouldStartGame(false)
+
+    } else if (room?.activeGameId) {
+      setGameId(room.activeGameId)
+      localStorage.setItem(`game_${roomCode}`, room.activeGameId)
+      setShouldStartGame(false)
+    } else {
+
+      setShouldStartGame(true)
+    }
+  }, [ready, roomCode, room?.activeGameId])
+
+  // Solo iniciar juego si no hay gameId existente
+  const { game: newGame, setGame, start } = useStartGameWithWatchdog(
+    shouldStartGame ? roomCode : "",
+    shouldStartGame ? userId || 0 : 0
   )
 
-  useGameHub(roomCode, game?.gameId, setGame)
+  // Escucha cuando se crea un nuevo juego
+  useEffect(() => {
+    if (newGame?.gameId && !gameId) {
+      setGameId(newGame.gameId)
+      localStorage.setItem(`game_${roomCode}`, newGame.gameId)
+      setShouldStartGame(false)
+    }
+  }, [newGame?.gameId, gameId, roomCode])
 
-  const {isAnimating } = useAnimatedCups(game?.cups)
-  const { isMyTurn } =
-    useSwap(game, userId ?? 0, setGame, isAnimating)
+  const currentGame = existingGame || newGame
+  
+  useGameHub(roomCode, currentGame?.gameId, setGame)
+
+  const { isAnimating } = useAnimatedCups(currentGame?.cups)
+  const { isMyTurn } = useSwap(currentGame, userId ?? 0, setGame, isAnimating)
+
 
   if (!ready) {
     return <PantallaFondo texto="Obteniendo usuario..." />
   }
 
-  if (!game) {
+  if (!currentGame) {
+    const getLoadingText = () => {
+      if (start?.isPending) return 'Starting Game...'
+      if (shouldStartGame) return 'Initializing...'
+      if (gameId) return 'Loading Game...'
+      return 'Connecting to Game...'
+    }
+
     return (
       <PantallaFondo
-        texto={start?.isPending ? 'Starting Game...' : 'Connecting to Game...'}
+        texto={getLoadingText()}
       />
     )
   }
 
-  if (game.status === 'Setup') {
+  if (currentGame.status === 'Setup') {
     return (
       <SetUpPhase
-        game={game}
+        game={currentGame}
         setGame={setGame}
         isMyTurn={isMyTurn}
         isAnimating={isAnimating}
@@ -55,23 +102,22 @@ function PlayPage() {
     )
   }
 
-  if (game.status === 'InProgress') {
+  if (currentGame.status === 'InProgress') {
     return (
-      <GamePhase game={game} setGame={setGame} />  
+      <GamePhase game={currentGame} setGame={setGame} />  
     )
   }
 
-  // End / Other states -- daniel
   return (
     <div className="min-h-screen bg-black text-white grid place-items-center">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-emerald-400 mb-4">🎉 Estado: {game.status}</h2>
+        <h2 className="text-2xl font-bold text-emerald-400 mb-4">🎉 Estado: {currentGame.status}</h2>
         <div className="text-white/80 space-y-2">
-          <p>Sala: {game.roomCode}</p>
-          <p>Estado: {game.status}</p>
-          <p>Jugador actual: {game.currentPlayerId}</p>
-          <p>Movimientos totales: {game.totalMoves}</p>
-          <p>Aciertos finales: {game.hits}/6</p>
+          <p>Sala: {currentGame.roomCode}</p>
+          <p>Estado: {currentGame.status}</p>
+          <p>Jugador actual: {currentGame.currentPlayerId}</p>
+          <p>Movimientos totales: {currentGame.totalMoves}</p>
+          <p>Aciertos finales: {currentGame.hits}/6</p>
         </div>
       </div>
     </div>
