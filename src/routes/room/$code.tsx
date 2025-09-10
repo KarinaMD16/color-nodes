@@ -48,7 +48,7 @@ function WaitingRoomPage() {
 
   useEffect(() => {
     // Check if there are at least 2 players
-    setCanStartGame(players.length >= 2 && isHost)
+    setCanStartGame(players.length >= 1 && isHost)
   }, [players, isHost])
 
 

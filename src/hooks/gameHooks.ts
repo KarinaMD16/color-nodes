@@ -23,28 +23,20 @@ export const usePlaceInitial = (gameId: string) => {
   });
 };
 
-export const useSwapMove = (gameId: string) => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body: SwapRequest) => postSwap(gameId, body),
-    // Optimistic UI: intercambia local y hace rollback si falla
-    onMutate: async (body) => {
-      await qc.cancelQueries({ queryKey: ['game', gameId] });
-      const prev = qc.getQueryData<GameStateResponse>(['game', gameId]);
-      if (prev) {
-        const next = structuredClone(prev);
-        const { fromIndex, toIndex } = body;
-        [next.cups[fromIndex], next.cups[toIndex]] = [next.cups[toIndex], next.cups[fromIndex]];
-        qc.setQueryData(['game', gameId], next);
+export function useSwapMove(gameId: string) {
+  const queryClient = useQueryClient()
+
+  const mutation = useMutation<GameStateResponse, Error, SwapRequest>({
+    mutationFn: (body) => postSwap(gameId, body),
+    onSuccess: (updated) => {
+      if (updated?.gameId) {
+        queryClient.setQueryData(['game', updated.gameId], updated)
       }
-      return { prev };
     },
-    onError: (_e, _b, ctx) => {
-      if (ctx?.prev) qc.setQueryData(['game', gameId], ctx.prev);
-    },
-    onSuccess: (data) => qc.setQueryData(['game', gameId], data),
-  });
-};
+  })
+
+  return mutation
+}
 
 export const useTick = (gameId: string) => {
   const qc = useQueryClient();
