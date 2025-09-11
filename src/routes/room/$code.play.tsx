@@ -29,7 +29,6 @@ function PlayPage() {
 
   const { data: existingGame } = useGameState(gameId || undefined)
   const { data: room } = useGetRoom(roomCode)
-  const navigated = useRef(false)
 
   // Lógica para decidir cuándo iniciar juego
   useEffect(() => {
@@ -67,11 +66,14 @@ function PlayPage() {
   }, [newGame?.gameId, gameId, roomCode])
 
   const currentGame = existingGame || newGame
+  const myId = String(userId)
+  const currentTurnId = currentGame?.currentPlayerId != null ? String(currentGame.currentPlayerId) : null
+  const isMyTurnById = !!currentTurnId && myId === currentTurnId
 
   useGameHub(roomCode, currentGame?.gameId, setGame)
 
   const { isAnimating } = useAnimatedCups(currentGame?.cups)
-  const { isMyTurn } = useSwap(currentGame, userId ?? 0, setGame, isAnimating)
+  const swap = useSwap(currentGame, userId ?? 0, setGame, isAnimating)
 
   
 
@@ -99,7 +101,7 @@ function PlayPage() {
       <SetUpPhase
         game={currentGame}
         setGame={setGame}
-        isMyTurn={isMyTurn}
+        isMyTurn={isMyTurnById}     // <--- clave
         isAnimating={isAnimating}
       />
     )
