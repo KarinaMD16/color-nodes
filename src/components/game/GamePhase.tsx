@@ -27,7 +27,6 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
   const playerId = Number(userId) || 0
 
   const { items, isAnimating } = useAnimatedCups(game?.cups ?? [])
-  const sig = (game?.cups ?? []).join('|')
   const board = useMemo(() => items.map((it) => ({ id: it.id, hex: it.hex })), [items])
 
   const { isMyTurn, selectedSlot, handleSlotClick, swapMove } =
