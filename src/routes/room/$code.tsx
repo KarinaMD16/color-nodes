@@ -54,10 +54,9 @@ function WaitingRoomPage() {
 
   // Determinar si el usuario actual es el host
   const isHost = roomData?.users?.[0]?.username === ctxName || roomData?.users?.[0]?.name === ctxName
-
   useEffect(() => {
     // Check if there are at least 2 players
-    setCanStartGame(players.length >= 1 && isHost)
+    setCanStartGame(players.length >= 2 && isHost)
   }, [players, isHost])
 
 
@@ -83,7 +82,10 @@ function WaitingRoomPage() {
       startGame(
         { roomCode: code },
         {
-          onSuccess: () => {
+          onSuccess: (data: any) => {
+            if (data?.gameId) {
+              localStorage.setItem(`game_${code}`, data.gameId)
+            }
             router.navigate({ 
               to: '/room/$code/play', 
               params: { code } 
