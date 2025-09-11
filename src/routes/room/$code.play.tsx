@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useGameState } from '@/hooks/gameHooks'
 import { useGetRoom } from '@/hooks/userHooks'
 import router from '@/router'
+import { useQueryClient } from '@tanstack/react-query'
 
 export const playRoute = createRoute({
   component: PlayPage,
@@ -25,6 +26,7 @@ function PlayPage() {
   const { id: userId } = useUser()
   const ready = !!roomCode && !!userId
 
+  const qc = useQueryClient()
   const [gameId, setGameId] = useState<string | null>(null)
   const { data: room } = useGetRoom(roomCode)
 
@@ -39,15 +41,41 @@ function PlayPage() {
     }
   }, [ready, roomCode, room?.activeGameId])
 
+  useEffect(() => {
+    if (!ready) return
+    const stored = localStorage.getItem(`game_${roomCode}`)
+    if (stored) {
+      setGameId(stored)
+    } else if (room?.activeGameId) {
+      setGameId(room.activeGameId)
+      localStorage.setItem(`game_${roomCode}`, room.activeGameId)
+    }
+  }, [ready, roomCode, room?.activeGameId])
+
   const { data: currentGame } = useGameState(gameId || undefined)
 
-  useGameHub(roomCode, currentGame?.gameId)
+  useGameHub(roomCode, gameId ?? undefined, (s) => {
+    if (s?.gameId && !gameId) {
+      setGameId(s.gameId)
+      localStorage.setItem(`game_${roomCode}`, s.gameId)
+    }
+    // Opcional: ya lo hace useGameHub, pero por si quieres asegurar:
+    if (s?.gameId) qc.setQueryData(['game', s.gameId], s)
+  })
 
   const validUser = Number.isInteger(userId) && Number(userId) > 0
+
+  const setGame = (next: any) => {
+    if (!gameId) return
+    const key = ['game', gameId] as const
+    const prev = qc.getQueryData(key)
+    const value = typeof next === 'function' ? next(prev) : next
+    qc.setQueryData(key, value)
+  }
+
   if (!ready || !validUser) return <PantallaFondo texto="Obteniendo usuario..." />
 
   if (!currentGame) {
-    // host aún no apretó Start o estamos esperando el broadcast del hub
     return <PantallaFondo texto="Waiting for game to start..." />
   }
 
@@ -60,8 +88,7 @@ function PlayPage() {
       <SetUpPhase
         key={`${currentGame.gameId}-${Number(currentGame.currentPlayerId)}`}
         game={currentGame}
-        setGame={() => { }}   // si tus componentes requieren setter, puedes pasar uno no-op;
-        // o envolver react-query con un setGame que haga qc.setQueryData
+        setGame={setGame}
         isMyTurn={isMyTurn}
         isAnimating={false}
       />
@@ -69,7 +96,7 @@ function PlayPage() {
   }
 
   if (currentGame.status === 'InProgress') {
-    return <GamePhase game={currentGame} setGame={() => { }} />
+    return <GamePhase game={currentGame} setGame={setGame} />
   }
 
   return (
