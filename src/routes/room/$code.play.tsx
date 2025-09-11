@@ -57,7 +57,7 @@ function PlayPage() {
   )
 
   const currentGame = existingGame || newGame
-  
+
   const isMyTurnById =
     currentGame?.currentPlayerId != null &&
     userId != null &&
@@ -77,8 +77,6 @@ function PlayPage() {
 
   const { isAnimating } = useAnimatedCups(currentGame?.cups)
   const swap = useSwap(currentGame, userId ?? 0, setGame, isAnimating)
-
-  
 
   if (!ready) {
     return <PantallaFondo texto="Obteniendo usuario..." />
