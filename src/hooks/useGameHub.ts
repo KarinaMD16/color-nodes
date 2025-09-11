@@ -10,7 +10,7 @@ export function useGameHub(
   onUpdate?: (s: GameStateResponse) => void
 ) {
   const qc = useQueryClient();
-  const { username, id: userId } = useUser();
+  const { username, id: localUserId, setUser } = useUser()
 
   const onUpdateRef = useRef(onUpdate);
   useEffect(() => { onUpdateRef.current = onUpdate; }, [onUpdate]);
@@ -36,7 +36,7 @@ export function useGameHub(
           onUpdateRef.current?.(patched);
         }
 
-        if (currentPlayerId === Number(userId)) {
+        if (currentPlayerId === Number(localUserId)) {
           console.log('🎯 It\'s your turn!');
         } else {
           console.log(`🎮 Player ${currentPlayerId}'s turn`);
@@ -49,8 +49,11 @@ export function useGameHub(
         console.log('🏆 Game finished:', s);
       },
       onConn: (state, info) => {
-        console.log('🔗 Hub connection:', state, info);
-      }, 
+        console.log('hub onConn:', state, info)
+        if (info?.userId && (!localUserId || localUserId <= 0)) {
+          setUser(Number(info.userId), username) // <-- fija id real
+        }
+      },
       onPlayerJoined: (username) => {
         console.log(`👋 ${username} joined the room`);
         qc.invalidateQueries({ queryKey: ['room', roomCode] });
@@ -67,7 +70,7 @@ export function useGameHub(
       console.log('🔗 Stopping GameHub');
       hub.stop().catch(console.error);
     };
-  }, [roomCode, username, userId, qc]); 
+  }, [roomCode, username, localUserId, qc]); 
 
   useEffect(() => {
     if (!roomCode || !username || !gameId) return;
