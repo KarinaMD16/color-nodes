@@ -8,9 +8,10 @@ import { useStartGameWithWatchdog } from '@/hooks/useStartGame'
 import SetUpPhase from '@/components/game/SetUpPhase'
 import PantallaFondo from '@/components/PantallaFondo'
 import GamePhase from '@/components/game/GamePhase'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useGameState } from '@/hooks/gameHooks'
 import { useGetRoom } from '@/hooks/userHooks'
+import router from '@/router'
 
 export const playRoute = createRoute({
   component: PlayPage,
@@ -25,7 +26,7 @@ function PlayPage() {
   const ready = !!roomCode && !!userId
   const [gameId, setGameId] = useState<string | null>(null)
   const [shouldStartGame, setShouldStartGame] = useState(false)
-  
+
   const { data: existingGame } = useGameState(gameId || undefined)
   const { data: room } = useGetRoom(roomCode)
 
@@ -34,7 +35,7 @@ function PlayPage() {
     if (!ready) return
 
     const storedGameId = localStorage.getItem(`game_${roomCode}`)
-    
+
     if (storedGameId) {
       setGameId(storedGameId)
       setShouldStartGame(false)
@@ -55,6 +56,13 @@ function PlayPage() {
     shouldStartGame ? userId || 0 : 0
   )
 
+  const currentGame = existingGame || newGame
+
+  const isMyTurnById =
+    currentGame?.currentPlayerId != null &&
+    userId != null &&
+    Number(currentGame.currentPlayerId) === Number(userId)
+  
   // Escucha cuando se crea un nuevo juego
   useEffect(() => {
     if (newGame?.gameId && !gameId) {
@@ -64,15 +72,14 @@ function PlayPage() {
     }
   }, [newGame?.gameId, gameId, roomCode])
 
-  const currentGame = existingGame || newGame
-  
+
   useGameHub(roomCode, currentGame?.gameId, setGame)
 
   const { isAnimating } = useAnimatedCups(currentGame?.cups)
-  const { isMyTurn } = useSwap(currentGame, userId ?? 0, setGame, isAnimating)
+  const swap = useSwap(currentGame, userId ?? 0, setGame, isAnimating)
 
-
-  if (!ready) {
+  const validUser = Number.isInteger(userId) && Number(userId) > 0;
+  if (!ready || !validUser) {
     return <PantallaFondo texto="Obteniendo usuario..." />
   }
 
@@ -94,9 +101,10 @@ function PlayPage() {
   if (currentGame.status === 'Setup') {
     return (
       <SetUpPhase
+        key={`${currentGame.gameId}-${Number(currentGame.currentPlayerId)}`} // ✅ remount cuando cambie el turno
         game={currentGame}
         setGame={setGame}
-        isMyTurn={isMyTurn}
+        isMyTurn={isMyTurnById}
         isAnimating={isAnimating}
       />
     )
@@ -104,7 +112,7 @@ function PlayPage() {
 
   if (currentGame.status === 'InProgress') {
     return (
-      <GamePhase game={currentGame} setGame={setGame} />  
+      <GamePhase game={currentGame} setGame={setGame} />
     )
   }
 

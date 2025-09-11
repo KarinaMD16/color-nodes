@@ -12,15 +12,17 @@ export const joinRoute = createRoute({
 })
 
 function JoinPage() {
-  const [roomCode, setRoomCode] = useState('')
-  const { username } = useUser()
-  const { mutate: postJoinRoom } = usePostJoinRoom()
+  const [roomCode, setRoomCode] = useState('');
+  const { username: ctxName } = useUser();
+  const [name, setName] = useState(ctxName ?? '');     // ← estado local editable
+  const { mutate: postJoinRoom } = usePostJoinRoom();
 
   const handleSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault?.()
-    if (!roomCode || !username) return
-    postJoinRoom({ username, roomCode })
-  }
+    e?.preventDefault?.();
+    const finalName = name.trim();
+    if (!roomCode || !finalName) return;
+    postJoinRoom({ username: finalName, roomCode });
+  };
 
   return (
     <div className="relative w-screen h-screen overflow-hidden">
@@ -44,12 +46,13 @@ function JoinPage() {
           <div className="nes-field">
             <label htmlFor="username_field">Username</label>
             <input
-            type="text"
-            id="username_field"
-            className="nes-input is-dark w-full text-left"
-            value={username}
-            placeholder="Enter your username"
-          />
+              type="text"
+              id="username_field"
+              className="nes-input is-dark w-full text-left"
+              value={name}
+              onChange={(e) => setName(e.target.value)}  // ← editable
+              placeholder="Enter your username"
+            />
         </div>
 
         <div className="nes-field">

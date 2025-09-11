@@ -80,9 +80,6 @@ function IndexPage() {
       alert('Please enter a username')
       return
     }
-
-    // Para join, establecer username y navegar
-    setUser(-1, inputUsername) // ID temporal
     router.navigate({ to: '/join' })
   }
 
