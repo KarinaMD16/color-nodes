@@ -20,7 +20,7 @@ export const route = createRoute({
 
 function WaitingRoomPage() {
   const { code } = route.useParams()
-  const { id: ctxId, username, setUser } = useUser();
+  const { id: ctxId, username: ctxName, setUser } = useUser();
   const [copied, setCopied] = useState(false)
   const [canStartGame, setCanStartGame] = useState(false)
   const [isStartingGame, setIsStartingGame] = useState(false)
@@ -50,7 +50,7 @@ function WaitingRoomPage() {
   }, [roomData?.users])
 
   // Determinar si el usuario actual es el host
-  const isHost = roomData?.users?.[0]?.username === username || roomData?.users?.[0]?.name === username
+  const isHost = roomData?.users?.[0]?.username === ctxName || roomData?.users?.[0]?.name === ctxName
 
   useEffect(() => {
     // Check if there are at least 2 players
@@ -63,12 +63,15 @@ function WaitingRoomPage() {
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
   useEffect(() => {
-    if ((!ctxId || ctxId <= 0) && username && roomData?.users?.length) {
-      const me = roomData.users.find((u: any) => u.username === username);
+    if ((!ctxId || ctxId <= 0) && ctxName && roomData?.users?.length) {
+      const me = roomData.users.find((u: any) =>
+        String(u.username).toLowerCase() === String(ctxName).toLowerCase()
+      );
       if (me?.id) setUser(me.id, me.username);
     }
-  }, [ctxId, username, roomData?.users, setUser]);
+  }, [ctxId, ctxName, roomData?.users, setUser]);
 
   const handleStartGame = () => {
     if (canStartGame && !isStartingGame) {
@@ -94,7 +97,7 @@ function WaitingRoomPage() {
 
   const handleLeaveRoom = () => {
     leaveRoom({ 
-      userId: roomData?.users?.find((u: User) => u.username === username)?.id, 
+      userId: roomData?.users?.find((u: User) => u.username === ctxName)?.id, 
       roomCode: code 
     })
   }
@@ -176,13 +179,13 @@ function WaitingRoomPage() {
                           className="w-8 h-8 rounded"
                         />
                         <span className="text-sm text-white">#{index + 1}</span>
-                        <span className={player.username === username ? 'text-yellow-300' : 'text-white'}>
+                        <span className={player.username === ctxName ? 'text-yellow-300' : 'text-white'}>
                           {player.username}
                         </span>
                         {player.isHost && (
                           <span className="text-yellow-400 text-xs">(HOST)</span>
                         )}
-                        {player.username === username && (
+                        {player.username === ctxName && (
                           <span className="text-green-400 text-xs">(YOU)</span>
                         )}
                       </div>
