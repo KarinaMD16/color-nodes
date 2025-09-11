@@ -26,7 +26,7 @@ function PlayPage() {
   const ready = !!roomCode && !!userId
   const [gameId, setGameId] = useState<string | null>(null)
   const [shouldStartGame, setShouldStartGame] = useState(false)
-  
+
   const { data: existingGame } = useGameState(gameId || undefined)
   const { data: room } = useGetRoom(roomCode)
   const navigated = useRef(false)
@@ -36,7 +36,7 @@ function PlayPage() {
     if (!ready) return
 
     const storedGameId = localStorage.getItem(`game_${roomCode}`)
-    
+
     if (storedGameId) {
       setGameId(storedGameId)
       setShouldStartGame(false)
@@ -67,17 +67,29 @@ function PlayPage() {
   }, [newGame?.gameId, gameId, roomCode])
 
   const currentGame = existingGame || newGame
-  
-  useGameHub(code, undefined, (s) => {
-    if (!navigated.current && s?.gameId) {
-      navigated.current = true
-      router.navigate({ to: '/room/$code/play', params: { code } })
-    }
-  })
+
+  useGameHub(roomCode, currentGame?.gameId, setGame)
 
   const { isAnimating } = useAnimatedCups(currentGame?.cups)
   const { isMyTurn } = useSwap(currentGame, userId ?? 0, setGame, isAnimating)
 
+  const isHost = room?.users?.[0]?.id === userId
+  // ...
+  useEffect(() => {
+    if (!ready) return
+    const storedGameId = localStorage.getItem(`game_${roomCode}`)
+
+    if (storedGameId) {
+      setGameId(storedGameId)
+      setShouldStartGame(false)
+    } else if (room?.activeGameId) {
+      setGameId(room.activeGameId)
+      localStorage.setItem(`game_${roomCode}`, room.activeGameId)
+      setShouldStartGame(false)
+    } else {
+      setShouldStartGame(!!isHost)   // <- solo host inicia
+    }
+  }, [ready, roomCode, room?.activeGameId, isHost])
 
   if (!ready) {
     return <PantallaFondo texto="Obteniendo usuario..." />
@@ -111,7 +123,7 @@ function PlayPage() {
 
   if (currentGame.status === 'InProgress') {
     return (
-      <GamePhase game={currentGame} setGame={setGame} />  
+      <GamePhase game={currentGame} setGame={setGame} />
     )
   }
 

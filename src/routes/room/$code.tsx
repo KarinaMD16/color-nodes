@@ -32,10 +32,7 @@ function WaitingRoomPage() {
   useGameHub(code, undefined, (s) => {
     if (!navigated.current && s?.gameId) {
       navigated.current = true
-      router.navigate({
-        to: '/room/$code/play',
-        params: { code }
-      })
+      router.navigate({ to: '/room/$code/play', params: { code } })
     }
   })
 
