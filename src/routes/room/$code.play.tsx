@@ -56,6 +56,11 @@ function PlayPage() {
     shouldStartGame ? userId || 0 : 0
   )
 
+  const currentGame = existingGame || newGame
+  const myId = String(userId)
+  const currentTurnId = currentGame?.currentPlayerId != null ? String(currentGame.currentPlayerId) : null
+  const isMyTurnById = !!currentTurnId && myId === currentTurnId
+  
   // Escucha cuando se crea un nuevo juego
   useEffect(() => {
     if (newGame?.gameId && !gameId) {
@@ -65,10 +70,6 @@ function PlayPage() {
     }
   }, [newGame?.gameId, gameId, roomCode])
 
-  const currentGame = existingGame || newGame
-  const myId = String(userId)
-  const currentTurnId = currentGame?.currentPlayerId != null ? String(currentGame.currentPlayerId) : null
-  const isMyTurnById = !!currentTurnId && myId === currentTurnId
 
   useGameHub(roomCode, currentGame?.gameId, setGame)
 
