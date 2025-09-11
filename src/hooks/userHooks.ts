@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { getRoom, getUserById, postCreateRoom, postCreateUser, postJoinRoom, postLeaveRoom } from "../services/userService";
 import { User } from "@/models/user";
 import { useNavigate } from "@tanstack/react-router";
+import { useUser } from "@/context/userContext";
 
 export function usePostCreateRoom() {
     return useMutation({
@@ -17,13 +18,32 @@ export function usePostCreateUser() {
 
 export function usePostJoinRoom() {
     const navigate = useNavigate();
+    const { setUser } = useUser();
+
     return useMutation({
         mutationFn: ({ username, roomCode }: { username: string, roomCode: string }) =>
             postJoinRoom(username, roomCode),
+
         onSuccess: (data) => {
-            console.log('User joined room successfully:', data);
-            navigate({ to: `/room/${data.code}` });
+            // 👇 Normaliza posibles formatos de respuesta
+            const userId =  data?.userId;
+            const uName =  data?.username;
+
+            if (userId && uName) {
+                // 🔴 GUARDA EN CONTEXTO + localStorage
+                setUser(Number(userId), String(uName));
+            } else {
+                console.warn("⚠️ join success sin userId/username. Respuesta:", data);
+            }
+
+            const code = data?.code ?? data?.roomCode;
+            if (!code) {
+                console.error("❌ join: no hay code en la respuesta", data);
+                return;
+            }
+            navigate({ to: `/room/${code}` });
         },
+
         onError: (error) => {
             console.error('Error joining room:', error);
         }

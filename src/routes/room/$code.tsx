@@ -20,7 +20,7 @@ export const route = createRoute({
 
 function WaitingRoomPage() {
   const { code } = route.useParams()
-  const { username } = useUser()
+  const { id: ctxId, username, setUser } = useUser();
   const [copied, setCopied] = useState(false)
   const [canStartGame, setCanStartGame] = useState(false)
   const [isStartingGame, setIsStartingGame] = useState(false)
@@ -63,6 +63,12 @@ function WaitingRoomPage() {
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+  useEffect(() => {
+    if ((!ctxId || ctxId <= 0) && username && roomData?.users?.length) {
+      const me = roomData.users.find((u: any) => u.username === username);
+      if (me?.id) setUser(me.id, me.username);
+    }
+  }, [ctxId, username, roomData?.users, setUser]);
 
   const handleStartGame = () => {
     if (canStartGame && !isStartingGame) {

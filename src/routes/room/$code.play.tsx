@@ -78,7 +78,8 @@ function PlayPage() {
   const { isAnimating } = useAnimatedCups(currentGame?.cups)
   const swap = useSwap(currentGame, userId ?? 0, setGame, isAnimating)
 
-  if (!ready) {
+  const validUser = Number.isInteger(userId) && Number(userId) > 0;
+  if (!ready || !validUser) {
     return <PantallaFondo texto="Obteniendo usuario..." />
   }
 
