@@ -18,7 +18,7 @@ import {
 } from '@dnd-kit/core'
 import DraggableCup from './DraggableCup'
 import DroppableSlot from './DroppableSlot'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import {  useMemo, useState } from 'react'
 import { AVATAR_SEEDS, Player } from '@/types/PlayerTypes'
 import { PlayersList } from './PlaeyrList'
 
@@ -29,6 +29,7 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
   const playerId = Number(userId) || 0
 
   const { items, isAnimating } = useAnimatedCups(game?.cups ?? [])
+  const board = useMemo(() => items.map((it) => ({ id: it.id, hex: it.hex })), [items])
 
   const { isMyTurn, selectedSlot, handleSlotClick, swapMove } =
     useSwap(game, playerId, setGame, isAnimating)
@@ -44,8 +45,6 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
       avatar: AVATAR_SEEDS[index % AVATAR_SEEDS.length]
     }))
   }, [game?.playerOrder])
-
-  const board = useMemo(() => items.map((it) => ({ id: it.id, hex: it.hex })), [items])
 
   const [activeId, setActiveId] = useState<string | null>(null)
   const [activeHex, setActiveHex] = useState<string | null>(null)
