@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { createRoute } from '@tanstack/react-router'
 import { rootRoute } from '../__root'
 import { useUser } from '../../context/userContext'
@@ -27,8 +27,17 @@ function WaitingRoomPage() {
   const { mutate: leaveRoom } = usePostLeaveRoom()
   const { data: roomData, isLoading } = useGetRoom(code)
   const { mutate: startGame } = useStartGame()
-  
-  useGameHub(code)
+  const navigated = useRef(false)
+
+  useGameHub(code, undefined, (s) => {
+    if (!navigated.current && s?.gameId) {
+      navigated.current = true
+      router.navigate({
+        to: '/room/$code/play',
+        params: { code }
+      })
+    }
+  })
 
   // Actualizar para manejar objetos de usuario completos
   const players: Player[] = useMemo(() => {
