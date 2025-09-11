@@ -10,7 +10,7 @@ export function useGameHub(
   onUpdate?: (s: GameStateResponse) => void
 ) {
   const qc = useQueryClient();
-  const { username } = useUser();
+  const { username, id: userId } = useUser();
 
   const onUpdateRef = useRef(onUpdate);
   useEffect(() => { onUpdateRef.current = onUpdate; }, [onUpdate]);
@@ -18,12 +18,16 @@ export function useGameHub(
   useEffect(() => {
     if (!roomCode || !username) return;
 
+    console.log('🔗 Setting up GameHub for room:', roomCode, 'gameId:', gameId);
+
     const hub = getGameHub(roomCode, username, {
       onStateUpdated: (s: GameStateResponse) => {
+        console.log('📡 State updated received:', s);
         if (s?.gameId) qc.setQueryData(['game', s.gameId], s);
         onUpdateRef.current?.(s);
       },
       onTurnChanged: ({ currentPlayerId }) => {
+        console.log('🔄 Turn changed:', currentPlayerId);
         if (!gameId) return;
         const prev = qc.getQueryData<GameStateResponse>(['game', gameId]);
         if (prev) {
@@ -31,24 +35,43 @@ export function useGameHub(
           qc.setQueryData(['game', gameId], patched);
           onUpdateRef.current?.(patched);
         }
+
+        if (currentPlayerId === Number(userId)) {
+          console.log('🎯 It\'s your turn!');
+        } else {
+          console.log(`🎮 Player ${currentPlayerId}'s turn`);
+        }
       },
-      onHitFeedback: ({ message }) => console.log('hit', message),
-      onFinished: (s) => console.log('fin juego', s),
-      onConn: (state, info) => console.log('hub', state, info), 
-      onPlayerJoined: () => {
-        qc.invalidateQueries({ queryKey: ['room', roomCode] })
+      onHitFeedback: ({ message }) => {
+        console.log('🎯 Hit feedback:', message);
       },
-      onPlayerLeft: () => {
-        qc.invalidateQueries({ queryKey: ['room', roomCode] })
+      onFinished: (s) => {
+        console.log('🏆 Game finished:', s);
+      },
+      onConn: (state, info) => {
+        console.log('🔗 Hub connection:', state, info);
+      }, 
+      onPlayerJoined: (username) => {
+        console.log(`👋 ${username} joined the room`);
+        qc.invalidateQueries({ queryKey: ['room', roomCode] });
+      },
+      onPlayerLeft: (username) => {
+        console.log(`👋 ${username} left the room`);
+        qc.invalidateQueries({ queryKey: ['room', roomCode] });
       },
     });
 
     hub.start().catch(console.error);
 
-  }, [roomCode, username]); 
+    return () => { 
+      console.log('🔗 Stopping GameHub');
+      hub.stop().catch(console.error);
+    };
+  }, [roomCode, username, userId, qc]); 
 
   useEffect(() => {
     if (!roomCode || !username || !gameId) return;
+    console.log('🎮 Joining game:', gameId);
     const hub = getGameHub(roomCode, username);
     hub.joinGame(gameId).catch(console.error);
   }, [roomCode, username, gameId]);

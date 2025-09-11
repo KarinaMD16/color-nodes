@@ -1,5 +1,5 @@
 export interface Player {
-  id: string
+  id: number
   username: string
   isHost: boolean
   avatar: string
