@@ -115,8 +115,8 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
             <div className="flex justify-between mb-4">
               <h2 className="text-xl">🎮 Game in Progress</h2>
               <div className="flex flex-col items-end">
-                <span className="text-xs text-white/70">Room Code</span>
-                <span className="font-mono text-lg">{game.roomCode}</span>
+                <span className="text-xs text-white/70">Room code</span>
+                <span className="font-mono">{game.roomCode}</span>
               </div>
             </div>
 
