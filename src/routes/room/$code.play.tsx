@@ -8,9 +8,10 @@ import { useStartGameWithWatchdog } from '@/hooks/useStartGame'
 import SetUpPhase from '@/components/game/SetUpPhase'
 import PantallaFondo from '@/components/PantallaFondo'
 import GamePhase from '@/components/game/GamePhase'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useGameState } from '@/hooks/gameHooks'
 import { useGetRoom } from '@/hooks/userHooks'
+import router from '@/router'
 
 export const playRoute = createRoute({
   component: PlayPage,
@@ -28,6 +29,7 @@ function PlayPage() {
   
   const { data: existingGame } = useGameState(gameId || undefined)
   const { data: room } = useGetRoom(roomCode)
+  const navigated = useRef(false)
 
   // Lógica para decidir cuándo iniciar juego
   useEffect(() => {
@@ -66,7 +68,12 @@ function PlayPage() {
 
   const currentGame = existingGame || newGame
   
-  useGameHub(roomCode, currentGame?.gameId, setGame)
+  useGameHub(code, undefined, (s) => {
+    if (!navigated.current && s?.gameId) {
+      navigated.current = true
+      router.navigate({ to: '/room/$code/play', params: { code } })
+    }
+  })
 
   const { isAnimating } = useAnimatedCups(currentGame?.cups)
   const { isMyTurn } = useSwap(currentGame, userId ?? 0, setGame, isAnimating)
