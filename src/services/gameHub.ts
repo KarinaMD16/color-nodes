@@ -1,81 +1,124 @@
-import { GameStateResponse } from '@/models/game';
 import * as signalR from '@microsoft/signalr';
-
-const HUB_URL = 'https://localhost:7081/gameHub';
+import type { GameStateResponse } from '@/models/game';
 
 type Handlers = {
   onStateUpdated?: (s: GameStateResponse) => void;
+  onTurnChanged?: (p: { currentPlayerId: number }) => void;
   onHitFeedback?: (p: { message: string }) => void;
-  onTurnChanged?: (p: { currentPlayerId: number | null; turnEndsAtUtc: string }) => void;
-  onFinished?: (p: { gameId: string; totalMoves: number }) => void;
-  onPlayerJoined?: (username: string) => void;
-  onPlayerLeft?: (username: string) => void;
-  onConn?: (state: 'connected' | 'reconnecting' | 'disconnected') => void;
+  onFinished?: (s: any) => void;
+  onPlayerJoined?: (u: string) => void;
+  onPlayerLeft?: (u: string) => void;
+  onConn?: (status: 'connecting' | 'connected' | 'reconnecting' | 'disconnected', info?: any) => void;
 };
 
-export function createGameHub(roomCode: string, username: string, h: Handlers = {}) {
-  const connection = new signalR.HubConnectionBuilder()
-    .withUrl(HUB_URL)
-    .withAutomaticReconnect({ nextRetryDelayInMilliseconds: () => 2000 })
+const HUB_BASE_URL = 'https://localhost:7081';
+const instances = new Map<string, ReturnType<typeof build>>();
+
+function build(hubUrl: string, roomCode: string, username: string, handlers: Handlers = {}) {
+  const conn = new signalR.HubConnectionBuilder()
+    .withUrl(hubUrl, { withCredentials: true })
+    .withAutomaticReconnect([0, 2000, 5000, 10000])
     .build();
 
-  connection.on('stateUpdated', (s: GameStateResponse) => h.onStateUpdated?.(s));
-  connection.on('hitFeedback', (p) => h.onHitFeedback?.(p));
-  connection.on('turnChanged', (p) => h.onTurnChanged?.(p));
-  connection.on('finished', (p) => h.onFinished?.(p));
-  connection.on('PlayerJoined', (u: string) => h.onPlayerJoined?.(u));
-  connection.on('PlayerLeft', (u: string) => h.onPlayerLeft?.(u));
-  connection.onreconnecting(() => h.onConn?.('reconnecting'));
+  // ✅ Usar los nombres correctos que envía el backend (minúsculas)
+  conn.on('stateUpdated', (s: GameStateResponse) => {
+    console.log('📡 stateUpdated received:', s);
+    requestAnimationFrame(() => handlers.onStateUpdated?.(s));
+  });
 
-  connection.onreconnected(async () => {
-    h.onConn?.('connected');
-    await joinRoom(); 
-    if (lastJoinedGameId) await joinGame(lastJoinedGameId);
-  });  
-  connection.onclose(() => h.onConn?.('disconnected'));
+  conn.on('turnChanged', (p: { currentPlayerId: number }) => {
+    console.log('🔄 turnChanged received:', p);
+    requestAnimationFrame(() => handlers.onTurnChanged?.(p));
+  });
 
-  let lastJoinedGameId: string | null = null;
+  conn.on('hitFeedback', (p: { message: string }) => {
+    console.log('🎯 hitFeedback received:', p);
+    handlers.onHitFeedback?.(p);
+  });
 
-  async function joinRoom() {
-    try {
-      await connection.invoke('JoinRoom', roomCode, username);
-    } catch (error) {
-      console.error('❌ Error joining room:', error)
-      throw error
+  conn.on('finished', (s) => {
+    console.log('🏆 finished received:', s);
+    handlers.onFinished?.(s);
+  });
+
+  conn.on('PlayerJoined', (u: string) => {
+    console.log('👋 PlayerJoined received:', u);
+    handlers.onPlayerJoined?.(u);
+  });
+
+  conn.on('PlayerLeft', (u: string) => {
+    console.log('👋 PlayerLeft received:', u);
+    handlers.onPlayerLeft?.(u);
+  });
+
+  conn.onreconnecting(err => {
+    console.log('🔄 Hub reconnecting...');
+    handlers.onConn?.('reconnecting', err);
+  });
+
+  conn.onreconnected(async (id) => {
+    console.log('✅ Hub reconnected:', id);
+    handlers.onConn?.('connected', { connId: id, reconnected: true });
+    await conn.invoke('JoinRoom', roomCode, username);
+    if (lastGameId) {
+      console.log('🎮 Re-joining game after reconnect:', lastGameId);
+      await conn.invoke('JoinGame', lastGameId);
     }
-  }
+  });
 
-  async function joinGame(gameId: string) {
-    try {
-      lastJoinedGameId = gameId;
-      await connection.invoke('JoinGame', gameId);
-    } catch (error) {
-      console.error('❌ Error joining game:', error)
-      throw error
-    }
-  }
+  conn.onclose(err => {
+    console.log('❌ Hub connection closed');
+    handlers.onConn?.('disconnected', err);
+  });
+
+  let started = false;
+  let startPromise: Promise<void> | null = null;
+  let lastGameId: string | null = null;
 
   async function start() {
-    try {
-      await connection.start();
-      h.onConn?.('connected');
-      await joinRoom(); 
-    } catch (error) {
-      h.onConn?.('disconnected')
-      throw error
-    }
+    if (started) return;
+    if (startPromise) return startPromise;
+    startPromise = (async () => {
+      console.log('🔗 Starting SignalR connection...');
+      handlers.onConn?.('connecting', { hubUrl });
+      await conn.start();
+      started = true;
+      console.log('✅ SignalR connected successfully');
+      handlers.onConn?.('connected', { connId: conn.connectionId });
+      await conn.invoke('JoinRoom', roomCode, username);
+      if (lastGameId) await conn.invoke('JoinGame', lastGameId);
+    })();
+    try { await startPromise; } finally { startPromise = null; }
   }
 
   async function stop() {
-    try {
-      if (lastJoinedGameId) {
-        await connection.invoke('LeaveGame', lastJoinedGameId);
-      }
-      await connection.stop();
-    } catch (error) {
-      console.error('❌ Error stopping SignalR:', error)
+    console.log('🔌 Stopping SignalR connection...');
+    // Mantener el singleton activo para otros consumidores
+    // Solo agregar logging pero no cerrar la conexión
+  }
+
+  async function joinGame(gameId: string) {
+    console.log('🎮 Joining game:', gameId);
+    lastGameId = gameId;
+    if (conn.state === signalR.HubConnectionState.Connected) {
+      await conn.invoke('JoinGame', gameId);
+      console.log('✅ Successfully joined game:', gameId);
+    } else {
+      console.log('⏳ Connection not ready, will join game when connected');
     }
   }
 
-  return { connection, start, stop, joinGame };
+  return { connection: conn, start, stop, joinGame };
+}
+
+export function getGameHub(roomCode: string, username: string, handlers?: Handlers) {
+  const hubUrl = new URL('/gameHub', HUB_BASE_URL.replace(/\/+$/, '')).toString();
+  const key = `${roomCode}::${username}`;
+  if (!instances.has(key)) {
+    console.log('🆕 Creating new GameHub instance for:', key);
+    instances.set(key, build(hubUrl, roomCode, username, handlers));
+  } else {
+    console.log('♻️ Reusing existing GameHub instance for:', key);
+  }
+  return instances.get(key)!;
 }

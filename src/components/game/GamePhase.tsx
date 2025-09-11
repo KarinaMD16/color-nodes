@@ -33,17 +33,17 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
   const { isMyTurn, selectedSlot, handleSlotClick, swapMove } =
     useSwap(game, playerId, setGame, isAnimating)
 
-    const players: Player[] = useMemo(() => {
-      if (!game?.playerOrder) return []
+  // Lista de jugadores con avatares
+  const players: Player[] = useMemo(() => {
+    if (!game?.playerOrder) return []
 
-      return game.playerOrder.map((playerId: number, index: number) => ({
-        id: playerId,                   
-        username: `Player ${playerId}`, 
-        isHost: index === 0,
-        avatar: AVATAR_SEEDS[index % AVATAR_SEEDS.length]
-      }))
-    }, [game?.playerOrder])
-
+    return game.playerOrder.map((playerId: number, index: number) => ({
+      id: playerId,                   
+      username: `Player ${playerId}`, 
+      isHost: index === 0,
+      avatar: AVATAR_SEEDS[index % AVATAR_SEEDS.length]
+    }))
+  }, [game?.playerOrder])
 
   const board = useMemo(() => items.map((it) => ({ id: it.id, hex: it.hex })), [items])
 
@@ -54,29 +54,9 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
     useSensor(TouchSensor)
   )
 
-  const [suppressMyMove, setSuppressMyMove] = useState(false)
-  const lastSigRef = useRef<string>('')
-
-  useEffect(() => {
-    const sig = (game.cups ?? []).join('|')
-    
-    if (sig !== lastSigRef.current) {
-      lastSigRef.current = sig
-      
-      if (suppressMyMove) {
-        queueMicrotask(() => setSuppressMyMove(false))
-      }
-    }
-  }, [game.cups, suppressMyMove])
-
   const sendSwap = async (fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return
-    if (isMyTurn) setSuppressMyMove(true)
-
-    try {
-      await swapMove.mutateAsync({ playerId, fromIndex, toIndex })
-    } finally {
-    }
+    await swapMove.mutateAsync({ playerId, fromIndex, toIndex })
   }
 
   const grid = (
@@ -84,26 +64,27 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
       layout
       className="grid grid-cols-6 gap-4 max-w-full mx-auto rounded-xl"
       transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+      style={{ willChange: 'transform' }}
     >
       {board.map(({ id, hex }, idx) => {
         const isSelected = isMyTurn && selectedSlot === idx
         return (
           <DroppableSlot key={`slot-${idx}`} id={`slot-${idx}`}>
-            <motion.button
-              layout
+            <button
               disabled={!isMyTurn || swapMove.isPending || isAnimating}
               onClick={() => isMyTurn && handleSlotClick(idx)}
               className={[
                 'aspect-square w-40 h-40 flex items-center justify-center rounded-xl transition-colors border-none',
                 isSelected ? 'bg-white/20' : 'bg-transparent',
               ].join(' ')}
-              whileHover={isMyTurn && !isAnimating ? { scale: 1.05 } : undefined}
-              whileTap={isMyTurn && !isAnimating ? { scale: 0.95 } : undefined}
             >
               <motion.div
-                layoutId={!isMyTurn || !suppressMyMove ? id : undefined}
+                key={id}
+                layout
+                layoutId={id}
+                transition={{ type: 'spring', stiffness: 400, damping: 26 }}
                 className={activeId === id ? 'opacity-0' : ''}
-                style={{ width: CUP_SIZE, height: CUP_SIZE, display: 'grid', placeItems: 'center' }}
+                style={{ width: CUP_SIZE, height: CUP_SIZE, display: 'grid', placeItems: 'center', willChange: 'transform' }}
               >
                 {isMyTurn && !swapMove.isPending && !isAnimating ? (
                   <DraggableCup
@@ -117,7 +98,7 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
                   <CupPixelStraw size={CUP_SIZE} colors={{ body: hex }} />
                 )}
               </motion.div>
-            </motion.button>
+            </button>
           </DroppableSlot>
         )
       })}
@@ -132,11 +113,10 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
       >
         <div className="min-h-screen bg-black/50 text-white p-6">
           <div className="max-w-full mx-auto">
-
-            <div className="flex justify-between">
-              <h2 className="text-xl mb-4">Game in progress</h2>
+            <div className="flex justify-between mb-4">
+              <h2 className="text-xl">🎮 Game in Progress</h2>
               <div className="flex flex-col items-end">
-                <span className="text-xs text-white/70">Room code</span>
+                <span className="text-xs text-white/70">Room Code</span>
                 <span className="font-mono text-lg">{game.roomCode}</span>
               </div>
             </div>
@@ -158,11 +138,11 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
               <div className="flex justify-between items-center text-sm">
                 <span className="text-white/70">
                   Current hits:{' '}
-                  <span className="text-emerald-400 font-bold">{game.hits ?? 0}</span>
+                  <span className="text-emerald-400 font-bold">{game.hits ?? 0}/6</span>
                 </span>
                 {game.hits === 6 && (
                   <span className="text-yellow-400 font-bold inline-flex items-center gap-2">
-                    <Trophy size={18} /> You won!
+                    <Trophy size={18} /> You Won!
                   </span>
                 )}
               </div>
@@ -170,25 +150,23 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
 
             <div className="mb-8">
               <div className="relative">
-                {isMyTurn ? (
+                <LayoutGroup id="game-board">
                   <DndContext
                     sensors={sensors}
                     collisionDetection={pointerWithin}
                     onDragStart={({ active }) => {
-                      if (swapMove.isPending || isAnimating) return
+                      if (!isMyTurn || swapMove.isPending || isAnimating) return
                       setActiveId(String(active.id))
                       const hex = (active.data.current as any)?.hex as string | undefined
                       if (hex) setActiveHex(hex)
                     }}
-
                     onDragCancel={() => {
                       setActiveId(null)
                       setActiveHex(null)
                     }}
-
                     onDragEnd={async ({ active, over }) => {
                       setActiveId(null)
-                      if (!over || swapMove.isPending || isAnimating) {
+                      if (!isMyTurn || !over || swapMove.isPending || isAnimating) {
                         setActiveHex(null)
                         return
                       }
@@ -203,34 +181,25 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
                         setActiveHex(null)
                         return
                       }
-                      await sendSwap(fromIndex, toIndex ) 
+                      await sendSwap(fromIndex, toIndex)
                       setActiveHex(null)
                     }}
                   >
-                    <LayoutGroup id="game-board">
-                      {grid}
-                    </LayoutGroup>
-
+                    {grid}
                     <DragOverlay
-                      dropAnimation={{
-                        duration: 180,
-                        easing: 'cubic-bezier(0.2, 0, 0, 1)',
-                      }}
+                      dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.2, 0, 0, 1)' }}
                     >
-                      {activeHex ? 
+                      {activeHex ? (
                         <div className="transform rotate-12 scale-110">
-                            <CupPixelStraw size={CUP_SIZE} colors={{ body: activeHex }} /> 
-                        </div>: null}
+                          <CupPixelStraw size={CUP_SIZE} colors={{ body: activeHex }} />
+                        </div>
+                      ) : null}
                     </DragOverlay>
                   </DndContext>
-                ) : (
-                  <LayoutGroup id="game-board">
-                    {grid}
-                  </LayoutGroup>
-                )}
+                </LayoutGroup>
 
                 {!isMyTurn && (
-                  <SpectatorOverlay text={`Turno del jugador ${game.currentPlayerId}`} />
+                  <SpectatorOverlay text={`Player ${game.currentPlayerId} is playing...`} />
                 )}
               </div>
 
