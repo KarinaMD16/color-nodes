@@ -57,9 +57,11 @@ function PlayPage() {
   )
 
   const currentGame = existingGame || newGame
-  const myId = String(userId)
-  const currentTurnId = currentGame?.currentPlayerId != null ? String(currentGame.currentPlayerId) : null
-  const isMyTurnById = !!currentTurnId && myId === currentTurnId
+  
+  const isMyTurnById =
+    currentGame?.currentPlayerId != null &&
+    userId != null &&
+    Number(currentGame.currentPlayerId) === Number(userId)
   
   // Escucha cuando se crea un nuevo juego
   useEffect(() => {
@@ -100,9 +102,10 @@ function PlayPage() {
   if (currentGame.status === 'Setup') {
     return (
       <SetUpPhase
+        key={`${currentGame.gameId}-${Number(currentGame.currentPlayerId)}`} // ✅ remount cuando cambie el turno
         game={currentGame}
         setGame={setGame}
-        isMyTurn={isMyTurnById}     // <--- clave
+        isMyTurn={isMyTurnById}
         isAnimating={isAnimating}
       />
     )

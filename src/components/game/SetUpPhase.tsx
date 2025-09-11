@@ -24,9 +24,10 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
   const [overlayId, setOverlayId] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const { id: userId } = useUser()
-  const myId = userId ?? 0
-  
+  const myId = Number(userId ?? 0)
+
   const { bumpById, triggerBumps } = useBumps()
+  
   const {
     draft,
     canConfirm,
