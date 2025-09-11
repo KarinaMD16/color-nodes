@@ -30,9 +30,12 @@ function WaitingRoomPage() {
   const navigated = useRef(false)
 
   useGameHub(code, undefined, (s) => {
-    if (!navigated.current && s?.gameId) {
-      navigated.current = true
-      router.navigate({ to: '/room/$code/play', params: { code } })
+    if (s?.gameId) {
+      localStorage.setItem(`game_${code}`, s.gameId)    // 👈 persistir
+      if (!navigated.current) {
+        navigated.current = true
+        router.navigate({ to: '/room/$code/play', params: { code } })
+      }
     }
   })
 

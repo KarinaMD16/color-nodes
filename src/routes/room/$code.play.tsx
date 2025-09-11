@@ -41,29 +41,31 @@ function PlayPage() {
     }
   }, [ready, roomCode, room?.activeGameId])
 
-  useEffect(() => {
-    if (!ready) return
-    const stored = localStorage.getItem(`game_${roomCode}`)
-    if (stored) {
-      setGameId(stored)
-    } else if (room?.activeGameId) {
-      setGameId(room.activeGameId)
-      localStorage.setItem(`game_${roomCode}`, room.activeGameId)
-    }
-  }, [ready, roomCode, room?.activeGameId])
+  const { data: currentGame, error } = useGameState(gameId || undefined)
 
-  const { data: currentGame } = useGameState(gameId || undefined)
+  // 👇 si el gameId guardado está roto, límpialo para volver a esperar anuncio
+  useEffect(() => {
+    if (!error) return
+    localStorage.removeItem(`game_${roomCode}`)
+    setGameId(null)
+  }, [error, roomCode])
 
   useGameHub(roomCode, gameId ?? undefined, (s) => {
     if (s?.gameId && !gameId) {
       setGameId(s.gameId)
       localStorage.setItem(`game_${roomCode}`, s.gameId)
     }
-    // Opcional: ya lo hace useGameHub, pero por si quieres asegurar:
     if (s?.gameId) qc.setQueryData(['game', s.gameId], s)
   })
 
   const validUser = Number.isInteger(userId) && Number(userId) > 0
+  if (!ready || !validUser) return <PantallaFondo texto="Obteniendo usuario..." />
+
+  if (!currentGame) return <PantallaFondo texto="Waiting for game to start..." />
+
+  const isMyTurn =
+    currentGame?.currentPlayerId != null &&
+    Number(currentGame.currentPlayerId) === Number(userId)
 
   const setGame = (next: any) => {
     if (!gameId) return
@@ -72,16 +74,6 @@ function PlayPage() {
     const value = typeof next === 'function' ? next(prev) : next
     qc.setQueryData(key, value)
   }
-
-  if (!ready || !validUser) return <PantallaFondo texto="Obteniendo usuario..." />
-
-  if (!currentGame) {
-    return <PantallaFondo texto="Waiting for game to start..." />
-  }
-
-  const isMyTurn =
-    currentGame?.currentPlayerId != null &&
-    Number(currentGame.currentPlayerId) === Number(userId)
 
   if (currentGame.status === 'Setup') {
     return (
