@@ -19,6 +19,8 @@ import {
 import DraggableCup from './DraggableCup'
 import DroppableSlot from './DroppableSlot'
 import { useMemo, useState } from 'react'
+import { AVATAR_SEEDS, Player } from '@/types/PlayerTypes'
+import { PlayersList } from './PlaeyrList'
 
 const CUP_SIZE = 110
 
@@ -39,6 +41,17 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
     useSensor(TouchSensor)
   )
 
+  const players: Player[] = useMemo(() => {
+    if (!game?.playerOrder) return []
+
+    return game.playerOrder.map((playerId: number, index: number) => ({
+      id: playerId,
+      username: `Player ${playerId}`,
+      isHost: index === 0,
+      avatar: AVATAR_SEEDS[index % AVATAR_SEEDS.length]
+    }))
+  }, [game?.playerOrder])
+  
   const sendSwap = async (fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return
     await swapMove.mutateAsync({ playerId, fromIndex, toIndex })
@@ -101,11 +114,13 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
             <div className="flex justify-between">
               <h2 className="text-xl mb-4">Game in progress</h2>
               <div className="flex flex-col items-end">
-                <span className="text-xs text-white/70">Room code</span>
-                <span className="font-mono">{game.roomCode}</span>
               </div>
             </div>
-
+            <PlayersList
+              players={players}
+              currentPlayerId={game.currentPlayerId}
+              myId={playerId}
+            />
             <div className="mb-6 p-4 bg-white/10 rounded-lg space-y-2">
               <div className="flex justify-between items-center">
                 <span className={isMyTurn ? 'text-emerald-400 font-semibold' : 'text-orange-400'}>
