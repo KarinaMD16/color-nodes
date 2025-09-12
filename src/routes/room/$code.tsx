@@ -139,7 +139,7 @@ function WaitingRoomPage() {
     <div className="relative w-screen h-screen overflow-hidden">
       <video
         className="fixed top-0 left-0 w-full h-full object-cover z-0"
-        src="https://videocdn.cdnpk.net/videos/85a91fd3-b609-5103-a429-72054aba7ac1/horizontal/previews/clear/large.mp4?token=exp=1757261246~hmac=5f4bc10ff7ed7f3079aacb730235a4e9240cdad185bd8695c2d073d849ae39d2"
+        src="/large (1).mp4"
         autoPlay
         loop
         muted
