@@ -43,7 +43,6 @@ function PlayPage() {
 
   const { data: currentGame, error } = useGameState(gameId || undefined)
 
-  // 👇 si el gameId guardado está roto, límpialo para volver a esperar anuncio
   useEffect(() => {
     if (!error) return
     localStorage.removeItem(`game_${roomCode}`)

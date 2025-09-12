@@ -31,7 +31,7 @@ function WaitingRoomPage() {
 
   useGameHub(code, undefined, (s) => {
     if (s?.gameId) {
-      localStorage.setItem(`game_${code}`, s.gameId)    // 👈 persistir
+      localStorage.setItem(`game_${code}`, s.gameId)
       if (!navigated.current) {
         navigated.current = true
         router.navigate({ to: '/room/$code/play', params: { code } })
@@ -39,11 +39,9 @@ function WaitingRoomPage() {
     }
   })
 
-  // Actualizar para manejar objetos de usuario completos
   const players: Player[] = useMemo(() => {
     if (!roomData?.users) return []
 
-    // Mapear los datos del usuario a la estructura Player
     return roomData.users.map((user: User, index: number) => ({
       id: user.id,
       username: user.username, 
@@ -52,10 +50,8 @@ function WaitingRoomPage() {
     }))
   }, [roomData?.users])
 
-  // Determinar si el usuario actual es el host
   const isHost = roomData?.users?.[0]?.username === ctxName || roomData?.users?.[0]?.name === ctxName
   useEffect(() => {
-    // Check if there are at least 2 players
     setCanStartGame(players.length >= 2 && isHost)
   }, [players, isHost])
 
