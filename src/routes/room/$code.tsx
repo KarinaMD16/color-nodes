@@ -54,7 +54,14 @@ function WaitingRoomPage() {
   useEffect(() => {
     setCanStartGame(players.length >= 2 && isHost)
   }, [players, isHost])
-
+  
+  useEffect(() => {
+    if (roomData?.activeGameId && !navigated.current) {
+      localStorage.setItem(`game_${code}`, roomData.activeGameId) // persistir gameId
+      navigated.current = true
+      router.navigate({ to: '/room/$code/play', params: { code } })
+    }
+  }, [roomData?.activeGameId, code])
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(code)
