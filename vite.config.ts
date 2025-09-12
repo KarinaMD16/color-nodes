@@ -16,7 +16,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3174,
+    host: '0.0.0.0', // 👈 permite conexiones desde otras PCs
+    port: 3174,      // 👈 puerto fijo
     open: true,
   },
   resolve: {

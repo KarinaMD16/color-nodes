@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { createRoute } from '@tanstack/react-router'
 import { rootRoute } from '../__root'
 import { useUser } from '../../context/userContext'
@@ -20,21 +20,28 @@ export const route = createRoute({
 
 function WaitingRoomPage() {
   const { code } = route.useParams()
-  const { username } = useUser()
+  const { id: ctxId, username: ctxName, setUser } = useUser();
   const [copied, setCopied] = useState(false)
   const [canStartGame, setCanStartGame] = useState(false)
   const [isStartingGame, setIsStartingGame] = useState(false)
   const { mutate: leaveRoom } = usePostLeaveRoom()
   const { data: roomData, isLoading } = useGetRoom(code)
   const { mutate: startGame } = useStartGame()
-  
-  useGameHub(code)
+  const navigated = useRef(false)
 
-  // Actualizar para manejar objetos de usuario completos
+  useGameHub(code, undefined, (s) => {
+    if (s?.gameId) {
+      localStorage.setItem(`game_${code}`, s.gameId)
+      if (!navigated.current) {
+        navigated.current = true
+        router.navigate({ to: '/room/$code/play', params: { code } })
+      }
+    }
+  })
+
   const players: Player[] = useMemo(() => {
     if (!roomData?.users) return []
 
-    // Mapear los datos del usuario a la estructura Player
     return roomData.users.map((user: User, index: number) => ({
       id: user.id,
       username: user.username, 
@@ -43,20 +50,33 @@ function WaitingRoomPage() {
     }))
   }, [roomData?.users])
 
-  // Determinar si el usuario actual es el host
-  const isHost = roomData?.users?.[0]?.username === username || roomData?.users?.[0]?.name === username
-
+  const isHost = roomData?.users?.[0]?.username === ctxName || roomData?.users?.[0]?.name === ctxName
   useEffect(() => {
-    // Check if there are at least 2 players
-    setCanStartGame(players.length >= 1 && isHost)
+    setCanStartGame(players.length >= 2 && isHost)
   }, [players, isHost])
-
+  
+  useEffect(() => {
+    if (roomData?.activeGameId && !navigated.current) {
+      localStorage.setItem(`game_${code}`, roomData.activeGameId) // persistir gameId
+      navigated.current = true
+      router.navigate({ to: '/room/$code/play', params: { code } })
+    }
+  }, [roomData?.activeGameId, code])
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(code)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
+  useEffect(() => {
+    if ((!ctxId || ctxId <= 0) && ctxName && roomData?.users?.length) {
+      const me = roomData.users.find((u: any) =>
+        String(u.username).toLowerCase() === String(ctxName).toLowerCase()
+      );
+      if (me?.id) setUser(me.id, me.username);
+    }
+  }, [ctxId, ctxName, roomData?.users, setUser]);
 
   const handleStartGame = () => {
     if (canStartGame && !isStartingGame) {
@@ -65,7 +85,10 @@ function WaitingRoomPage() {
       startGame(
         { roomCode: code },
         {
-          onSuccess: () => {
+          onSuccess: (data: any) => {
+            if (data?.gameId) {
+              localStorage.setItem(`game_${code}`, data.gameId)
+            }
             router.navigate({ 
               to: '/room/$code/play', 
               params: { code } 
@@ -82,7 +105,7 @@ function WaitingRoomPage() {
 
   const handleLeaveRoom = () => {
     leaveRoom({ 
-      userId: roomData?.users?.find((u: User) => u.username === username)?.id, 
+      userId: roomData?.users?.find((u: User) => u.username === ctxName)?.id, 
       roomCode: code 
     })
   }
@@ -116,7 +139,7 @@ function WaitingRoomPage() {
     <div className="relative w-screen h-screen overflow-hidden">
       <video
         className="fixed top-0 left-0 w-full h-full object-cover z-0"
-        src="https://videocdn.cdnpk.net/videos/85a91fd3-b609-5103-a429-72054aba7ac1/horizontal/previews/clear/large.mp4?token=exp=1757261246~hmac=5f4bc10ff7ed7f3079aacb730235a4e9240cdad185bd8695c2d073d849ae39d2"
+        src="/large (1).mp4"
         autoPlay
         loop
         muted
@@ -164,13 +187,13 @@ function WaitingRoomPage() {
                           className="w-8 h-8 rounded"
                         />
                         <span className="text-sm text-white">#{index + 1}</span>
-                        <span className={player.username === username ? 'text-yellow-300' : 'text-white'}>
+                        <span className={player.username === ctxName ? 'text-yellow-300' : 'text-white'}>
                           {player.username}
                         </span>
                         {player.isHost && (
                           <span className="text-yellow-400 text-xs">(HOST)</span>
                         )}
-                        {player.username === username && (
+                        {player.username === ctxName && (
                           <span className="text-green-400 text-xs">(YOU)</span>
                         )}
                       </div>

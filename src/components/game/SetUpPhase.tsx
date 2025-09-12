@@ -15,6 +15,7 @@ import { SetUpPhaseProps } from '@/types/gameItems/items'
 import { insertAtWithNearestHole, moveWithinBoardNearest } from '@/utils/game/collisions'
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion'
 import { cupVariants, LAYOUT_SPRING, useBumps } from '@/utils/game/animations'
+import { useUser } from '@/context/userContext'
 
 const CUP_SIZE = 100
 
@@ -22,15 +23,18 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overlayId, setOverlayId] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
-  
+  const { id: userId } = useUser()
+  const myId = Number(userId ?? 0)
+
   const { bumpById, triggerBumps } = useBumps()
+  
   const {
     draft,
     canConfirm,
     confirmInitial,
     placeInitial,
-    applyDraft, 
-  } = useInitialPhase(game, game.currentPlayerId ?? 0, isMyTurn, setGame)
+    applyDraft,
+  } = useInitialPhase(game, myId, isMyTurn, setGame)
 
   // en el board
   const usedColors = useMemo(

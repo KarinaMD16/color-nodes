@@ -13,69 +13,69 @@ type Handlers = {
   onConn?: (state: 'connected' | 'reconnecting' | 'disconnected') => void;
 };
 
-export function createGameHub(roomCode: string, username: string, h: Handlers = {}) {
-  const connection = new signalR.HubConnectionBuilder()
-    .withUrl(HUB_URL)
-    .withAutomaticReconnect({ nextRetryDelayInMilliseconds: () => 2000 })
+const HUB_BASE_URL = 'http://26.233.244.31:5197';
+const instances = new Map<string, ReturnType<typeof build>>();
+
+function build(hubUrl: string, roomCode: string, username: string, handlers: Handlers = {}) {
+  const conn = new signalR.HubConnectionBuilder()
+    .withUrl(hubUrl, { withCredentials: true })
+    .withAutomaticReconnect([0, 2000, 5000, 10000])
     .build();
 
-  connection.on('stateUpdated', (s: GameStateResponse) => h.onStateUpdated?.(s));
-  connection.on('hitFeedback', (p) => h.onHitFeedback?.(p));
-  connection.on('turnChanged', (p) => h.onTurnChanged?.(p));
-  connection.on('finished', (p) => h.onFinished?.(p));
-  connection.on('PlayerJoined', (u: string) => h.onPlayerJoined?.(u));
-  connection.on('PlayerLeft', (u: string) => h.onPlayerLeft?.(u));
-  connection.onreconnecting(() => h.onConn?.('reconnecting'));
+  conn.on('StateUpdated', s => requestAnimationFrame(() => handlers.onStateUpdated?.(s)))
+  conn.on('TurnChanged', id => requestAnimationFrame(() => handlers.onTurnChanged?.({ currentPlayerId: id })))
 
-  connection.onreconnected(async () => {
-    h.onConn?.('connected');
-    await joinRoom(); 
-    if (lastJoinedGameId) await joinGame(lastJoinedGameId);
-  });  
-  connection.onclose(() => h.onConn?.('disconnected'));
+  conn.on('HitFeedback', (m: string) => handlers.onHitFeedback?.({ message: m }));
+  conn.on('Finished', s => handlers.onFinished?.(s));
+  conn.on('PlayerJoined', u => handlers.onPlayerJoined?.(u));
+  conn.on('PlayerLeft', u => handlers.onPlayerLeft?.(u));
 
-  let lastJoinedGameId: string | null = null;
+  conn.onreconnecting(err => handlers.onConn?.('reconnecting', err));
+  conn.onreconnected(id => {
+    handlers.onConn?.('connected', { connId: id, reconnected: true });
+    void conn.invoke('JoinRoom', roomCode, username);
+  });
+  conn.onclose(err => handlers.onConn?.('disconnected', err));
 
-  async function joinRoom() {
-    try {
-      await connection.invoke('JoinRoom', roomCode, username);
-    } catch (error) {
-      console.error('❌ Error joining room:', error)
-      throw error
-    }
-  }
-
-  async function joinGame(gameId: string) {
-    try {
-      lastJoinedGameId = gameId;
-      await connection.invoke('JoinGame', gameId);
-    } catch (error) {
-      console.error('❌ Error joining game:', error)
-      throw error
-    }
-  }
+  let started = false;
+  let startPromise: Promise<void> | null = null;
+  let lastGameId: string | null = null;
 
   async function start() {
-    try {
-      await connection.start();
-      h.onConn?.('connected');
-      await joinRoom(); 
-    } catch (error) {
-      h.onConn?.('disconnected')
-      throw error
-    }
+    if (started) return;
+    if (startPromise) return startPromise;
+    startPromise = (async () => {
+      handlers.onConn?.('connecting', { hubUrl });
+      await conn.start();
+      started = true;
+      handlers.onConn?.('connected', { connId: conn.connectionId });
+      await conn.invoke('JoinRoom', roomCode, username);
+      if (lastGameId) await conn.invoke('JoinGame', lastGameId);
+    })();
+    try { await startPromise; } finally { startPromise = null; }
   }
 
   async function stop() {
-    try {
-      if (lastJoinedGameId) {
-        await connection.invoke('LeaveGame', lastJoinedGameId);
-      }
-      await connection.stop();
-    } catch (error) {
-      console.error('❌ Error stopping SignalR:', error)
+    // no detengas si hay otros consumidores usando este singleton
+    // (dejamos que el singleton viva todo el tiempo de la app; si quieres, agrega un refCount)
+  }
+
+  async function joinGame(gameId: string) {
+    lastGameId = gameId;
+    if (conn.state === signalR.HubConnectionState.Connected) {
+      await conn.invoke('JoinGame', gameId);
     }
   }
 
-  return { connection, start, stop, joinGame };
+  return { connection: conn, start, stop, joinGame };
+}
+
+export function getGameHub(roomCode: string, username: string, handlers?: Handlers) {
+  const hubUrl = new URL('/gameHub', HUB_BASE_URL.replace(/\/+$/, '')).toString();
+  const key = `${roomCode}::${username}`;
+  if (!instances.has(key)) {
+    instances.set(key, build(hubUrl, roomCode, username, handlers));
+  } else {
+  }
+  return instances.get(key)!;
 }
