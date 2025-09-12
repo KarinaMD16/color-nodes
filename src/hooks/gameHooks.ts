@@ -13,6 +13,9 @@ export const useGameState = (gameId?: string) =>
 export const useStartGame = () =>
   useMutation({
     mutationFn: postGameStart,
+    onSuccess: (data) => {
+      if (data?.gameId) localStorage.setItem(`game_code`, data.gameId)
+    },
 });
 
 export const usePlaceInitial = (gameId: string) => {

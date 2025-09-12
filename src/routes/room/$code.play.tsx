@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useGameState } from '@/hooks/gameHooks'
 import { useGetRoom } from '@/hooks/userHooks'
 import router from '@/router'
+import { useQueryClient } from '@tanstack/react-query'
 
 export const playRoute = createRoute({
   component: PlayPage,
@@ -24,96 +25,69 @@ function PlayPage() {
   const roomCode = code
   const { id: userId } = useUser()
   const ready = !!roomCode && !!userId
-  const [gameId, setGameId] = useState<string | null>(null)
-  const [shouldStartGame, setShouldStartGame] = useState(false)
 
-  const { data: existingGame } = useGameState(gameId || undefined)
+  const qc = useQueryClient()
+  const [gameId, setGameId] = useState<string | null>(null)
   const { data: room } = useGetRoom(roomCode)
 
-  // Lógica para decidir cuándo iniciar juego
   useEffect(() => {
     if (!ready) return
-
-    const storedGameId = localStorage.getItem(`game_${roomCode}`)
-
-    if (storedGameId) {
-      setGameId(storedGameId)
-      setShouldStartGame(false)
-
+    const stored = localStorage.getItem(`game_${roomCode}`)
+    if (stored) {
+      setGameId(stored)
     } else if (room?.activeGameId) {
       setGameId(room.activeGameId)
       localStorage.setItem(`game_${roomCode}`, room.activeGameId)
-      setShouldStartGame(false)
-    } else {
-
-      setShouldStartGame(true)
     }
   }, [ready, roomCode, room?.activeGameId])
 
-  // Solo iniciar juego si no hay gameId existente
-  const { game: newGame, setGame, start } = useStartGameWithWatchdog(
-    shouldStartGame ? roomCode : "",
-    shouldStartGame ? userId || 0 : 0
-  )
+  const { data: currentGame, error } = useGameState(gameId || undefined)
 
-  const currentGame = existingGame || newGame
-
-  const isMyTurnById =
-    currentGame?.currentPlayerId != null &&
-    userId != null &&
-    Number(currentGame.currentPlayerId) === Number(userId)
-  
-  // Escucha cuando se crea un nuevo juego
   useEffect(() => {
-    if (newGame?.gameId && !gameId) {
-      setGameId(newGame.gameId)
-      localStorage.setItem(`game_${roomCode}`, newGame.gameId)
-      setShouldStartGame(false)
+    if (!error) return
+    localStorage.removeItem(`game_${roomCode}`)
+    setGameId(null)
+  }, [error, roomCode])
+
+  useGameHub(roomCode, gameId ?? undefined, (s) => {
+    if (s?.gameId && !gameId) {
+      setGameId(s.gameId)
+      localStorage.setItem(`game_${roomCode}`, s.gameId)
     }
-  }, [newGame?.gameId, gameId, roomCode])
+    if (s?.gameId) qc.setQueryData(['game', s.gameId], s)
+  })
 
+  const validUser = Number.isInteger(userId) && Number(userId) > 0
+  if (!ready || !validUser) return <PantallaFondo texto="Obteniendo usuario..." />
 
-  useGameHub(roomCode, currentGame?.gameId, setGame)
+  if (!currentGame) return <PantallaFondo texto="Waiting for game to start..." />
 
-  const { isAnimating } = useAnimatedCups(currentGame?.cups)
-  const swap = useSwap(currentGame, userId ?? 0, setGame, isAnimating)
+  const isMyTurn =
+    currentGame?.currentPlayerId != null &&
+    Number(currentGame.currentPlayerId) === Number(userId)
 
-  const validUser = Number.isInteger(userId) && Number(userId) > 0;
-  if (!ready || !validUser) {
-    return <PantallaFondo texto="Obteniendo usuario..." />
-  }
-
-  if (!currentGame) {
-    const getLoadingText = () => {
-      if (start?.isPending) return 'Starting Game...'
-      if (shouldStartGame) return 'Initializing...'
-      if (gameId) return 'Loading Game...'
-      return 'Connecting to Game...'
-    }
-
-    return (
-      <PantallaFondo
-        texto={getLoadingText()}
-      />
-    )
+  const setGame = (next: any) => {
+    if (!gameId) return
+    const key = ['game', gameId] as const
+    const prev = qc.getQueryData(key)
+    const value = typeof next === 'function' ? next(prev) : next
+    qc.setQueryData(key, value)
   }
 
   if (currentGame.status === 'Setup') {
     return (
       <SetUpPhase
-        key={`${currentGame.gameId}-${Number(currentGame.currentPlayerId)}`} // ✅ remount cuando cambie el turno
+        key={`${currentGame.gameId}-${Number(currentGame.currentPlayerId)}`}
         game={currentGame}
         setGame={setGame}
-        isMyTurn={isMyTurnById}
-        isAnimating={isAnimating}
+        isMyTurn={isMyTurn}
+        isAnimating={false}
       />
     )
   }
 
   if (currentGame.status === 'InProgress') {
-    return (
-      <GamePhase game={currentGame} setGame={setGame} />
-    )
+    return <GamePhase game={currentGame} setGame={setGame} />
   }
 
   return (
