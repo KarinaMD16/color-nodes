@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getRoom, getUserById, postCreateRoom, postCreateUser, postJoinRoom, postLeaveRoom } from "../services/userService";
+import { getRoom, getUserById, getUsersOrderedByScore, postCreateRoom, postCreateUser, postJoinRoom, postLeaveRoom } from "../services/userService";
 import { User } from "@/models/user";
 import { useNavigate } from "@tanstack/react-router";
 import { useUser } from "@/context/userContext";
@@ -96,4 +96,12 @@ export function useGetRoom(roomCode: string) {
         refetchInterval: (q) => (q.state.data?.activeGameId ? false : 1500),
         refetchOnWindowFocus: true,
     })
+}
+
+export function useGetUsersOrderedByScore() {
+  return useQuery<User[], Error>({
+    queryKey: ["users", "orderedByScore"],
+    queryFn: getUsersOrderedByScore,
+    refetchInterval: 5000, 
+  })
 }
