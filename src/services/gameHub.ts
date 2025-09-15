@@ -10,7 +10,7 @@ type Handlers = {
   onConn?: (status: 'connecting' | 'connected' | 'reconnecting' | 'disconnected', info?: any) => void;
 };
 
-const HUB_BASE_URL = 'http://26.233.244.31:5197';
+const HUB_BASE_URL = 'http://26.88.140.28:5197';
 const instances = new Map<string, ReturnType<typeof build>>();
 
 function build(hubUrl: string, roomCode: string, username: string, handlers: Handlers = {}) {
