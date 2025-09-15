@@ -41,6 +41,7 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
     useSensor(TouchSensor)
   )
 
+  // jugadores + turnos
   const players: Player[] = useMemo(() => {
     if (!game?.playerOrder) return []
 
