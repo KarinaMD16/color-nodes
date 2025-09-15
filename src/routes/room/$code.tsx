@@ -54,7 +54,14 @@ function WaitingRoomPage() {
   useEffect(() => {
     setCanStartGame(players.length >= 2 && isHost)
   }, [players, isHost])
-
+  
+  useEffect(() => {
+    if (roomData?.activeGameId && !navigated.current) {
+      localStorage.setItem(`game_${code}`, roomData.activeGameId) // persistir gameId
+      navigated.current = true
+      router.navigate({ to: '/room/$code/play', params: { code } })
+    }
+  }, [roomData?.activeGameId, code])
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(code)
@@ -132,7 +139,7 @@ function WaitingRoomPage() {
     <div className="relative w-screen h-screen overflow-hidden">
       <video
         className="fixed top-0 left-0 w-full h-full object-cover z-0"
-        src="https://videocdn.cdnpk.net/videos/85a91fd3-b609-5103-a429-72054aba7ac1/horizontal/previews/clear/large.mp4?token=exp=1757261246~hmac=5f4bc10ff7ed7f3079aacb730235a4e9240cdad185bd8695c2d073d849ae39d2"
+        src="/large (1).mp4"
         autoPlay
         loop
         muted
