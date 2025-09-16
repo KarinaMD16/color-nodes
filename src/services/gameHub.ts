@@ -8,9 +8,10 @@ type Handlers = {
   onPlayerJoined?: (u: string) => void;
   onPlayerLeft?: (u: string) => void;
   onConn?: (status: 'connecting' | 'connected' | 'reconnecting' | 'disconnected', info?: any) => void;
+  onChatMessage?: (msg: any) => void;
 };
 
-const HUB_BASE_URL = 'http://26.233.244.31:5197';
+const HUB_BASE_URL = 'http://26.166.216.244:5197';
 const instances = new Map<string, ReturnType<typeof build>>();
 
 function build(hubUrl: string, roomCode: string, username: string, handlers: Handlers = {}) {
@@ -19,20 +20,24 @@ function build(hubUrl: string, roomCode: string, username: string, handlers: Han
     .withAutomaticReconnect([0, 2000, 5000, 10000])
     .build();
 
-  conn.on('StateUpdated', s => requestAnimationFrame(() => handlers.onStateUpdated?.(s)))
-  conn.on('TurnChanged', id => requestAnimationFrame(() => handlers.onTurnChanged?.({ currentPlayerId: id })))
+      let currentHandlers = { ...handlers };
+  
 
-  conn.on('HitFeedback', (m: string) => handlers.onHitFeedback?.({ message: m }));
-  conn.on('Finished', s => handlers.onFinished?.(s));
-  conn.on('PlayerJoined', u => handlers.onPlayerJoined?.(u));
-  conn.on('PlayerLeft', u => handlers.onPlayerLeft?.(u));
+  conn.on('StateUpdated', s => requestAnimationFrame(() => currentHandlers.onStateUpdated?.(s)))
+  conn.on('TurnChanged', id => requestAnimationFrame(() => currentHandlers.onTurnChanged?.({ currentPlayerId: id })))
 
-  conn.onreconnecting(err => handlers.onConn?.('reconnecting', err));
+  conn.on('HitFeedback', (m: string) => currentHandlers.onHitFeedback?.({ message: m }));
+  conn.on('Finished', s => currentHandlers.onFinished?.(s));
+  conn.on('PlayerJoined', u => currentHandlers.onPlayerJoined?.(u));
+  conn.on('PlayerLeft', u => currentHandlers.onPlayerLeft?.(u));
+  conn.on('ChatMessage', msg => currentHandlers.onChatMessage?.(msg));
+
+  conn.onreconnecting(err => currentHandlers.onConn?.('reconnecting', err));
   conn.onreconnected(id => {
-    handlers.onConn?.('connected', { connId: id, reconnected: true });
+    currentHandlers.onConn?.('connected', { connId: id, reconnected: true });
     void conn.invoke('JoinRoom', roomCode, username);
   });
-  conn.onclose(err => handlers.onConn?.('disconnected', err));
+  conn.onclose(err => currentHandlers.onConn?.('disconnected', err));
 
   let started = false;
   let startPromise: Promise<void> | null = null;
@@ -64,7 +69,18 @@ function build(hubUrl: string, roomCode: string, username: string, handlers: Han
     }
   }
 
-  return { connection: conn, start, stop, joinGame };
+    async function sendChatMessage(roomCode: string, username: string, message: string) {
+    if (conn.state === signalR.HubConnectionState.Connected) {
+      await conn.invoke('SendChatMessage', roomCode, username, message);
+    }
+  }
+    function updateHandlers(newHandlers: Handlers) {
+    console.log('🔄 Updating handlers:', Object.keys(newHandlers));
+    currentHandlers = { ...currentHandlers, ...newHandlers };
+    console.log('🔄 Updated handlers, onChatMessage exists:', !!currentHandlers.onChatMessage);
+  }
+
+  return { connection: conn, start, stop, joinGame, sendChatMessage, updateHandlers };
 }
 
 export function getGameHub(roomCode: string, username: string, handlers?: Handlers) {
@@ -72,7 +88,10 @@ export function getGameHub(roomCode: string, username: string, handlers?: Handle
   const key = `${roomCode}::${username}`;
   if (!instances.has(key)) {
     instances.set(key, build(hubUrl, roomCode, username, handlers));
-  } else {
-  }
+  } 
+   if (handlers) {
+      instances.get(key)!.updateHandlers(handlers);
+   }
+  
   return instances.get(key)!;
 }
