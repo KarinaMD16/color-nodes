@@ -30,3 +30,8 @@ export async function getUserById(id: number): Promise<User> {
   const { data } = await colorNodesAPI.get<User>(`/users/${id}`)
   return data
 }
+
+export async function getUsersOrderedByScore(): Promise<User[]> {
+  const { data } = await colorNodesAPI.get<User[]>(`/users/ordered-by-score`)
+  return data
+}

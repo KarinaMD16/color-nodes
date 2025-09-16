@@ -1,7 +1,7 @@
 export interface User {
     id: number;
     username: string;
-    Score: number;
+    score: number;
     RoomId?: number;
 }
 

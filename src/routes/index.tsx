@@ -5,6 +5,7 @@ import { usePostCreateRoom, usePostCreateUser } from '../hooks/userHooks';
 import { useUser } from '../context/userContext';
 import router from '../router';
 import { useState } from 'react';
+import Leaderboard from '@/components/leaderBoard/LeaderBoard';
 
 export const indexRoute = createRoute({
   component: IndexPage,
@@ -94,6 +95,7 @@ function IndexPage() {
           hoverFillColor='#5C5C5C'
         />
       </div>
+      <Leaderboard />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-2xl mx-auto p-6 text-center font-press-start">
           <h1 className="font-press-start text-3xl md:text-4xl mb-8 whitespace-nowrap">

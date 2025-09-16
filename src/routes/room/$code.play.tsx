@@ -13,6 +13,7 @@ import { useGameState } from '@/hooks/gameHooks'
 import { useGetRoom } from '@/hooks/userHooks'
 import router from '@/router'
 import { useQueryClient } from '@tanstack/react-query'
+import { User } from '@/models/user'
 
 export const playRoute = createRoute({
   component: PlayPage,
@@ -90,20 +91,27 @@ function PlayPage() {
     return <GamePhase game={currentGame} setGame={setGame} />
   }
 
+  const winner = (room?.users as User[])?.find((u: User) => u.id === currentGame.currentPlayerId);
+  
   return (
-    <div className="min-h-screen bg-black text-white grid place-items-center">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-emerald-400 mb-4">🎉 Estado: {currentGame.status}</h2>
-        <div className="text-white/80 space-y-2">
-          <p>Sala: {currentGame.roomCode}</p>
-          <p>Estado: {currentGame.status}</p>
-          <p>Jugador actual: {currentGame.currentPlayerId}</p>
-          <p>Movimientos totales: {currentGame.totalMoves}</p>
-          <p>Aciertos finales: {currentGame.hits}/6</p>
-        </div>
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center">
+      <h1 className="text-6xl font-extrabold text-amber-400 mb-6 animate-pulse">
+        🎉 ¡{winner ? winner.username : `Jugador ${currentGame.currentPlayerId}`} ganó! 🎉
+      </h1>
+      <p className="text-white/70 text-xl mb-4">¡Felicidades al ganador de esta partida!</p>
+      <div className="bg-emerald-500 text-black font-bold px-6 py-3 rounded-lg text-2xl animate-bounce mt-8">
+        🏆 Ganador 🏆
       </div>
+      <button
+        onClick={() => router.navigate({ to: '/room/$code', params: { code: roomCode } })}
+        className="mt-8 bg-blue-500 hover:bg-blue-600 text-white font-bold px-6 py-3 rounded-lg text-2xl transition-all duration-200"
+      >
+        🔄 Volver a jugar
+      </button>
+
     </div>
-  )
+  );
+
 }
 
 export default PlayPage;
