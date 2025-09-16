@@ -8,7 +8,7 @@ import { useGameHub } from '../../hooks/useGameHub'
 import router from '../../router'
 import { Player, AVATAR_SEEDS } from '@/types/PlayerTypes'
 import { User } from '@/models/user'
-import ChatGame from '@/components/ChatGame'
+import ChatGame from '@/components/game/ChatGame'
 
 
 export const route = createRoute({
