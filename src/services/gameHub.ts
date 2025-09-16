@@ -1,16 +1,13 @@
-import { GameStateResponse } from '@/models/game';
 import * as signalR from '@microsoft/signalr';
 
-const HUB_URL = 'https://localhost:7081/gameHub';
-
 type Handlers = {
-  onStateUpdated?: (s: GameStateResponse) => void;
+  onStateUpdated?: (s: any) => void;
+  onTurnChanged?: (p: { currentPlayerId: number }) => void;
   onHitFeedback?: (p: { message: string }) => void;
-  onTurnChanged?: (p: { currentPlayerId: number | null; turnEndsAtUtc: string }) => void;
-  onFinished?: (p: { gameId: string; totalMoves: number }) => void;
-  onPlayerJoined?: (username: string) => void;
-  onPlayerLeft?: (username: string) => void;
-  onConn?: (state: 'connected' | 'reconnecting' | 'disconnected') => void;
+  onFinished?: (s: any) => void;
+  onPlayerJoined?: (u: string) => void;
+  onPlayerLeft?: (u: string) => void;
+  onConn?: (status: 'connecting' | 'connected' | 'reconnecting' | 'disconnected', info?: any) => void;
 };
 
 const HUB_BASE_URL = 'http://26.233.244.31:5197';
