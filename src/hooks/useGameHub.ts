@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import type { GameStateResponse } from '@/models/game'
-import { createGameHub } from '@/services/gameHub'
-import { useUser } from '@/context/userContext'
+import { useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import type { GameStateResponse } from '@/models/game';
+import { getGameHub } from '@/services/gameHub';
+import { useUser } from '@/context/userContext';
 
 export function useGameHub(roomCode: string, gameId?: string, onUpdate?: (s: GameStateResponse) => void) {
   const qc = useQueryClient();
@@ -12,16 +12,12 @@ export function useGameHub(roomCode: string, gameId?: string, onUpdate?: (s: Gam
   useEffect(() => { onUpdateRef.current = onUpdate; }, [onUpdate]);
 
   useEffect(() => {
-    if (!roomCode || !username) return
+    if (!roomCode || !username) return;
 
-    const hub = createGameHub(roomCode, username, {
+    const hub = getGameHub(roomCode, username, {
       onStateUpdated: (s: GameStateResponse) => {
-        if (s?.gameId) {
-          qc.setQueryData(['game', s.gameId], s)
-        }
-        if (!gameId || s.gameId === gameId) {
-          onUpdate?.(s)
-        }
+        if (s?.gameId) qc.setQueryData(['game', s.gameId], s);
+        onUpdateRef.current?.(s);
       },
       onTurnChanged: ({ currentPlayerId }) => {
         if (!gameId) return;
@@ -56,9 +52,10 @@ export function useGameHub(roomCode: string, gameId?: string, onUpdate?: (s: Gam
   }, [roomCode, username]);
 
   useEffect(() => {
-    if (!hubRef.current?.joinGame || !gameId) return
-    hubRef.current.joinGame(gameId).catch(console.error)
-  }, [gameId])
+    if (!roomCode || !username || !gameId) return;
+    const hub = getGameHub(roomCode, username);
+    hub.joinGame(gameId).catch(console.error);
+  }, [roomCode, username, gameId]);
 
   return {};
 }
