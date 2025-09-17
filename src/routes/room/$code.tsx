@@ -8,6 +8,7 @@ import { useGameHub } from '../../hooks/useGameHub'
 import router from '../../router'
 import { Player, AVATAR_SEEDS } from '@/types/PlayerTypes'
 import { User } from '@/models/user'
+import ChatGame from '@/components/game/ChatGame'
 import GameInfo from '@/components/GameInfo'
 
 
@@ -149,7 +150,7 @@ function WaitingRoomPage() {
       <div className="fixed inset-0 bg-black/50 z-1"></div>
       
       <div className="fixed inset-0 flex items-center font-press-start text-white justify-center p-4 z-10">
-        <div className="w-full space-y-6 max-w-4xl mx-auto p-6">
+        <div className="w-full space-y-6 max-w-[65vw] mx-auto p-6">
           <h1 className="font-press-start text-center text-3xl md:text-4xl mb-8">
             <span style={{ color: '#7F5CC1' }}>Waiting</span>{' '}
             <span style={{ color: '#C15CAE' }}>Room</span>
@@ -174,7 +175,7 @@ function WaitingRoomPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Players List */}
-            <div className="nes-container is-dark with-title">
+            <div className="nes-container is-dark with-title min-w-0">
               <p className="title">Players ({players.length}/4)</p>
               <div className="space-y-3">
 
@@ -294,6 +295,10 @@ function WaitingRoomPage() {
         <div className="fixed bottom-16 left-20 z-50">
           <GameInfo />
         </div>
+      </div>
+      {/* Chat Component */}
+      <div className="z-10">
+        <ChatGame roomCode={code} />
       </div>
     </div>
   )
