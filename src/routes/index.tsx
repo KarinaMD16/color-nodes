@@ -6,6 +6,7 @@ import { useUser } from '../context/userContext';
 import router from '../router';
 import { useState } from 'react';
 import Leaderboard from '@/components/leaderBoard/LeaderBoard';
+import GameInfo from '@/components/GameInfo';
 
 export const indexRoute = createRoute({
   component: IndexPage,
@@ -147,6 +148,9 @@ function IndexPage() {
             </label>
           </div>
         </div>
+      </div>
+      <div className="fixed bottom-16 left-20 z-50">
+        <GameInfo />
       </div>
     </div>
   )
