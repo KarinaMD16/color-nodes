@@ -9,6 +9,7 @@ import router from '../../router'
 import { Player, AVATAR_SEEDS } from '@/types/PlayerTypes'
 import { User } from '@/models/user'
 import ChatGame from '@/components/game/ChatGame'
+import GameInfo from '@/components/GameInfo'
 
 
 export const route = createRoute({
@@ -53,7 +54,7 @@ function WaitingRoomPage() {
 
   const isHost = roomData?.users?.[0]?.username === ctxName || roomData?.users?.[0]?.name === ctxName
   useEffect(() => {
-    setCanStartGame(players.length >= 2 && isHost)
+    setCanStartGame(players.length >= 1 && isHost)
   }, [players, isHost])
   
   useEffect(() => {
@@ -290,6 +291,9 @@ function WaitingRoomPage() {
               </div>
             </div>
           </div>
+        </div>
+        <div className="fixed bottom-16 left-20 z-50">
+          <GameInfo />
         </div>
       </div>
       {/* Chat Component */}
