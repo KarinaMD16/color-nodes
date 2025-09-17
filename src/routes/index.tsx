@@ -7,6 +7,7 @@ import router from '../router';
 import { useState } from 'react';
 import Leaderboard from '@/components/leaderBoard/LeaderBoard';
 import GameInfo from '@/components/GameInfo';
+import { toast } from '@/lib/toast';
 
 export const indexRoute = createRoute({
   component: IndexPage,
@@ -23,7 +24,7 @@ function IndexPage() {
 
   const handleCreateRoom = () => {
     if (!inputUsername.trim()) {
-      alert('Please enter a username')
+      toast.warning('Please enter a username')
       return
     }
 
@@ -51,7 +52,7 @@ function IndexPage() {
             const roomCode = roomData.code 
             if (!roomCode) {
               console.error('❌ No room code in response:', roomData)
-              alert('Error: No room code received')
+              toast.error('Error: No room code received')
               setIsCreatingRoom(false)
               return
             }
@@ -64,14 +65,14 @@ function IndexPage() {
           },
           onError: (error) => {
             console.error('❌ Error creating room:', error)
-            alert('Error creating room. Please try again.')
+            toast.error('Error creating room. Please try again.')
             setIsCreatingRoom(false)
           }
         })
       },
       onError: (error) => {
         console.error('❌ Error creating user:', error)
-        alert('Error creating user. Please try again.')
+        toast.error('Error creating user. Please try again.')
         setIsCreatingRoom(false)
       }
     })
@@ -79,7 +80,7 @@ function IndexPage() {
 
   const handleJoinRoom = () => {
     if (!inputUsername.trim()) {
-      alert('Please enter a username')
+      toast.warning('Please enter a username')
       return
     }
     router.navigate({ to: '/join' })

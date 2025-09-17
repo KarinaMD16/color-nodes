@@ -15,10 +15,11 @@ function JoinPage() {
   const [roomCode, setRoomCode] = useState('');
   const { username: ctxName } = useUser();
   const [name, setName] = useState(ctxName ?? '');     // ← estado local editable
-  const { mutate: postJoinRoom } = usePostJoinRoom();
+  const { mutate: postJoinRoom, isPending } = usePostJoinRoom();
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault?.();
+    if (isPending) return; // avoid duplicate submits while loading
     const finalName = name.trim();
     if (!roomCode || !finalName) return;
     postJoinRoom({ username: finalName, roomCode });
@@ -52,6 +53,7 @@ function JoinPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}  // ← editable
               placeholder="Enter your username"
+              disabled={isPending}
             />
         </div>
 
@@ -64,6 +66,7 @@ function JoinPage() {
             value={roomCode}
             onChange={(e) => setRoomCode(e.target.value)}
             placeholder="Enter room code"
+            disabled={isPending}
           />
         </div>
 
@@ -78,8 +81,11 @@ function JoinPage() {
               name="room-action"
               tabIndex={0}
               onClick={() => handleSubmit()}
+              disabled={isPending}
             />
-            <span className="font-press-start text-white text-sm">Join</span>
+            <span className={`font-press-start text-white text-sm ${isPending ? 'opacity-50' : ''}`}>
+                {isPending ? 'Joining...' : 'Join'}
+              </span>
           </label>
                                     
             <label className="flex items-center space-x-4 is-pointer">
@@ -89,6 +95,7 @@ function JoinPage() {
               name="room-action"
               tabIndex={0}
               onClick={() => router.navigate({ to: '/' })}
+              disabled={isPending}
             />
             <span className="font-press-start text-white text-sm">Back</span>
           </label>

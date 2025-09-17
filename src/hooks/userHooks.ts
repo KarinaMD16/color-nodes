@@ -4,6 +4,7 @@ import { User } from "@/models/user";
 import { useNavigate } from "@tanstack/react-router";
 import { useUser } from "@/context/userContext";
 import { getUsernames } from "../services/userService";
+import { toast } from "@/lib/toast";
 
 export function usePostCreateRoom() {
     return useMutation({
@@ -48,20 +49,27 @@ export function usePostJoinRoom() {
       if (uid && uname) {
         setUser(Number(uid), String(uname)); // ← guarda en contexto + localStorage
       } else {
-        console.warn("⚠️ join success sin userId/username. Respuesta:", data);
+        console.warn("⚠️ join success sin userId/username. Data:", data);
       }
 
       // 4) navegar
       const code = data?.code ?? data?.roomCode ?? vars.roomCode;
       if (!code) {
-        console.error("❌ join: no hay code en la respuesta", data);
+        console.error("❌ join: no code", data);
         return;
       }
       navigate({ to: `/room/${code}` });
     },
 
-    onError: (error) => {
-      console.error('Error joining room:', error);
+    onError: (error: any) => {
+      const status = error?.response?.status
+      const fallbackMsg =
+        error?.response?.data?.message ??
+        error?.message ??
+        "Error joining room"
+      const msg = status === 500 ? "Game already started" : fallbackMsg
+      console.error(msg, error)
+      toast.error("Error joining room: " + msg)
     }
   })
 }
