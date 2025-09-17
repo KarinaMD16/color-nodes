@@ -16,6 +16,7 @@ import { insertAtWithNearestHole, moveWithinBoardNearest } from '@/utils/game/co
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion'
 import { cupVariants, LAYOUT_SPRING, useBumps } from '@/utils/game/animations'
 import { useUser } from '@/context/userContext'
+import { useGetUsernames } from '@/hooks/userHooks'
 
 const CUP_SIZE = 100
 
@@ -25,6 +26,7 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
   const [isDragging, setIsDragging] = useState(false)
   const { id: userId } = useUser()
   const myId = Number(userId ?? 0)
+  const { data: users } = useGetUsernames()
 
   const { bumpById, triggerBumps } = useBumps()
   
@@ -70,7 +72,7 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                 </p>
               ) : (
                 <p className="nes-text is-warning">
-                  Waiting for player {game.currentPlayerId} to place the cups…
+                  Waiting for {users?.find((user: { id: number | null }) => user.id === game.currentPlayerId)?.username} to place the cups…
                 </p>
               )}
             </div>
