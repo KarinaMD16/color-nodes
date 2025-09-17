@@ -54,7 +54,7 @@ function WaitingRoomPage() {
 
   const isHost = roomData?.users?.[0]?.username === ctxName || roomData?.users?.[0]?.name === ctxName
   useEffect(() => {
-    setCanStartGame(players.length >= 1 && isHost)
+    setCanStartGame(players.length >= 2 && isHost)
   }, [players, isHost])
   
   useEffect(() => {

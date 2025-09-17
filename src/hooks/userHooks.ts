@@ -3,6 +3,7 @@ import { getRoom, getUserById, getUsersOrderedByScore, postCreateRoom, postCreat
 import { User } from "@/models/user";
 import { useNavigate } from "@tanstack/react-router";
 import { useUser } from "@/context/userContext";
+import { getUsernames } from "../services/userService";
 
 export function usePostCreateRoom() {
     return useMutation({
@@ -102,6 +103,14 @@ export function useGetUsersOrderedByScore() {
   return useQuery<User[], Error>({
     queryKey: ["users", "orderedByScore"],
     queryFn: getUsersOrderedByScore,
+    refetchInterval: 5000, 
+  })
+}
+
+export function useGetUsernames() {
+  return useQuery<User[], Error>({
+    queryKey: ["usernames"],
+    queryFn: getUsernames,
     refetchInterval: 5000, 
   })
 }
