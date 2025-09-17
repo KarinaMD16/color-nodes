@@ -21,6 +21,7 @@ import DroppableSlot from './DroppableSlot'
 import { useMemo, useState } from 'react'
 import { AVATAR_SEEDS, Player } from '@/types/PlayerTypes'
 import { PlayersList } from './PlaeyrList'
+import { useGetUsernames } from '@/hooks/userHooks'
 
 const CUP_SIZE = 110
 
@@ -42,16 +43,17 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
   )
 
   // jugadores + turnos
+  const { data: usernames } = useGetUsernames()
   const players: Player[] = useMemo(() => {
     if (!game?.playerOrder) return []
 
     return game.playerOrder.map((playerId: number, index: number) => ({
       id: playerId,
-      username: `Player ${playerId}`,
+      username: usernames?.find((user) => user.id === playerId)?.username || `Player ${playerId}`,
       isHost: index === 0,
       avatar: AVATAR_SEEDS[index % AVATAR_SEEDS.length]
     }))
-  }, [game?.playerOrder])
+  }, [game?.playerOrder, usernames])
   
   const sendSwap = async (fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return

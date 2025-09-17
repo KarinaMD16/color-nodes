@@ -1,5 +1,5 @@
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "./ui/dialog";
-import focoImage from '../../foquito.png';
+import focoImage from '/foquito.png';
 
 const GameInfo = () => {
     return (

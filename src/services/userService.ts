@@ -35,3 +35,8 @@ export async function getUsersOrderedByScore(): Promise<User[]> {
   const { data } = await colorNodesAPI.get<User[]>(`/users/ordered-by-score`)
   return data
 }
+
+export async function getUsernames() {
+    const { data } = await colorNodesAPI.get<User[]>(`Users`);
+    return data;
+}
