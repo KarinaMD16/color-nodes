@@ -1,4 +1,4 @@
-import { CreateRoom, User } from "../models/user";
+import { CreateRoom, User, UserRankDto } from "../models/user";
 import colorNodesAPI from "../api/client";
 
 export const postCreateRoom = async (username: string) => {
@@ -39,4 +39,9 @@ export async function getUsersOrderedByScore(): Promise<User[]> {
 export async function getUsernames() {
     const { data } = await colorNodesAPI.get<User[]>(`Users`);
     return data;
+}
+
+export async function getLeaderboard(roomCode: string): Promise<UserRankDto[]> {
+  const { data } = await colorNodesAPI.get<UserRankDto[]>(`/Room/${roomCode}/leaderboard`);
+  return data;
 }
