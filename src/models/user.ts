@@ -17,3 +17,9 @@ export interface Room {
     leaderId: number;
     users: User[];
 }
+
+export interface UserRankDto {
+  rank: number;
+  username: string;
+  score: number;
+}

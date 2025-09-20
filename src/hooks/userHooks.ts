@@ -1,10 +1,11 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getRoom, getUserById, getUsersOrderedByScore, postCreateRoom, postCreateUser, postJoinRoom, postLeaveRoom } from "../services/userService";
-import { User } from "@/models/user";
+import { getLeaderboard, getRoom, getUserById, getUsersOrderedByScore, postCreateRoom, postCreateUser, postJoinRoom, postLeaveRoom } from "../services/userService";
+import { User, UserRankDto } from "@/models/user";
 import { useNavigate } from "@tanstack/react-router";
 import { useUser } from "@/context/userContext";
 import { getUsernames } from "../services/userService";
 import { toast } from "@/lib/toast";
+import colorNodesAPI from "@/api/client";
 
 export function usePostCreateRoom() {
     return useMutation({
@@ -122,3 +123,19 @@ export function useGetUsernames() {
     refetchInterval: 5000, 
   })
 }
+
+export function useGetLeaderboard(
+  roomCode: string,
+  enabledDefault = false,
+  options?: { enabled?: boolean }
+) {
+  return useQuery<UserRankDto[], Error>({
+    queryKey: ["leaderboard", roomCode],
+    queryFn: () => getLeaderboard(roomCode),
+    enabled: options?.enabled ?? enabledDefault,
+    refetchInterval: 5000,
+  })
+}
+
+
+  
