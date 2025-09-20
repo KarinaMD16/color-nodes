@@ -9,11 +9,9 @@ type Handlers = {
   onPlayerLeft?: (u: string) => void;
   onConn?: (status: 'connecting' | 'connected' | 'reconnecting' | 'disconnected', info?: any) => void;
   onChatMessage?: (msg: any) => void;
-  onGameStarted?: (gameId: string) => void;
-  onGameFinished?: (gameId: string) => void;
 };
 
-const HUB_BASE_URL = 'http://26.48.186.190:5197';
+const HUB_BASE_URL = 'http://26.166.216.244:5197';
 const instances = new Map<string, ReturnType<typeof build>>();
 
 function build(hubUrl: string, roomCode: string, username: string, initialHandlers: Handlers = {}) {
@@ -72,15 +70,6 @@ function build(hubUrl: string, roomCode: string, username: string, initialHandle
   });
 
   conn.onclose(err => callHandlers('Conn', 'disconnected', err));
-
-  conn.on('GameStarted', (gameId: string) => {
-    lastGameId = gameId; // guardar para reconexión
-    callHandlers('GameStarted', gameId);
-  });
-  
-  conn.on('GameFinished', (gameId: string) => {
-    callHandlers('GameFinished', gameId);
-  });
 
   let started = false;
   let startPromise: Promise<void> | null = null;

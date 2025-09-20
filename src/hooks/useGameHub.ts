@@ -3,21 +3,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { GameStateResponse } from '@/models/game';
 import { getGameHub } from '@/services/gameHub';
 import { useUser } from '@/context/userContext';
+import { q } from 'framer-motion/client';
 
-type Handlers = {
-  onUpdate?: (s: GameStateResponse) => void;
-  onGameStarted?: (gameId: string) => void;
-  onGameFinished?: (gameId: string) => void;
-  onPlayerJoined?: () => void;
-  onPlayerLeft?: () => void;
-  onChatMessage?: () => void;
-};
-
-export function useGameHub(roomCode: string, gameId?: string, handlers: Handlers = {}) {
+export function useGameHub(roomCode: string, gameId?: string, onUpdate?: (s: GameStateResponse) => void) {
   const qc = useQueryClient();
   const { username, id: localUserId, setUser } = useUser();
-  const handlersRef = useRef(handlers);
-  useEffect(() => { handlersRef.current = handlers }, [handlers]);
+
+  const onUpdateRef = useRef(onUpdate);
+  useEffect(() => { onUpdateRef.current = onUpdate; }, [onUpdate]);
 
   useEffect(() => {
     if (!roomCode || !username) return;
@@ -25,7 +18,7 @@ export function useGameHub(roomCode: string, gameId?: string, handlers: Handlers
     const hub = getGameHub(roomCode, username, {
       onStateUpdated: (s: GameStateResponse) => {
         if (s?.gameId) qc.setQueryData(['game', s.gameId], s);
-        handlersRef.current.onUpdate?.(s);
+        onUpdateRef.current?.(s);
       },
       onTurnChanged: ({ currentPlayerId }) => {
         if (!gameId) return;
@@ -33,7 +26,7 @@ export function useGameHub(roomCode: string, gameId?: string, handlers: Handlers
         if (prev) {
           const patched = { ...prev, currentPlayerId };
           qc.setQueryData(['game', gameId], patched);
-          handlersRef.current.onUpdate?.(patched);
+          onUpdateRef.current?.(patched);
         }
       },
       onHitFeedback: ({ message }) => console.log('hit', message),
@@ -48,19 +41,14 @@ export function useGameHub(roomCode: string, gameId?: string, handlers: Handlers
         }
       },
       onPlayerJoined: () => {
-        qc.invalidateQueries({ queryKey: ['room', roomCode] });
-        handlersRef.current.onPlayerJoined?.();
+        qc.invalidateQueries({ queryKey: ['room', roomCode] })
       },
       onPlayerLeft: () => {
-        qc.invalidateQueries({ queryKey: ['room', roomCode] });
-        handlersRef.current.onPlayerLeft?.();
+        qc.invalidateQueries({ queryKey: ['room', roomCode] })
       },
       onChatMessage: () => {
-        qc.invalidateQueries({ queryKey: ['chat', roomCode] });
-        handlersRef.current.onChatMessage?.();
-      },
-      onGameStarted: (gameId) => handlersRef.current.onGameStarted?.(gameId),
-      onGameFinished: (gameId) => handlersRef.current.onGameFinished?.(gameId),
+        qc.invalidateQueries({ queryKey: ['chat', roomCode] }) 
+      }
     });
 
     hub.start().catch(console.error);

@@ -14,9 +14,7 @@ export const useStartGame = () =>
   useMutation({
     mutationFn: postGameStart,
     onSuccess: (data) => {
-      if (data?.gameId) {
-        localStorage.setItem(`game_code`, data.gameId)
-      }
+      if (data?.gameId) localStorage.setItem(`game_code`, data.gameId)
     },
 });
 
