@@ -29,7 +29,7 @@ function JoinPage() {
     <div className="relative w-screen h-screen overflow-hidden">
       <video
         className="fixed top-0 left-0 w-full h-full object-cover z-0"
-        src="https://packaged-media.redd.it/ngwgetoqr7y51/pb/m2-res_1080p.mp4?m=DASHPlaylist.mpd&v=1&e=1757149200&s=36fd0cd68fdebb032055efa60d97a8830317d1e7"
+        src="/space-background-video.mp4"
         autoPlay
         loop
         muted

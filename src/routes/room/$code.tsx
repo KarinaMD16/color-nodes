@@ -141,7 +141,7 @@ function WaitingRoomPage() {
     <div className="relative w-screen h-screen overflow-hidden">
       <video
         className="fixed top-0 left-0 w-full h-full object-cover z-0"
-        src="/large (1).mp4"
+        src="/trees-background-video.mp4"
         autoPlay
         loop
         muted

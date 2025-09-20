@@ -195,7 +195,7 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
                 </LayoutGroup>
 
                 {!isMyTurn && (
-                  <SpectatorOverlay text={`Turno del jugador ${usernames?.find((user: { id: number | null }) => user.id === game.currentPlayerId)?.username}`} />
+                  <SpectatorOverlay text={`${usernames?.find((user: { id: number | null }) => user.id === game.currentPlayerId)?.username}'s turn`} />
                 )}
               </div>
 
