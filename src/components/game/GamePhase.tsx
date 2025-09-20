@@ -127,7 +127,7 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
             <div className="mb-6 p-4 bg-white/10 rounded-lg space-y-2">
               <div className="flex justify-between items-center">
                 <span className={isMyTurn ? 'text-emerald-400 font-semibold' : 'text-orange-400'}>
-                  {isMyTurn ? 'Your turn' : `Player ${game.currentPlayerId}'s turn`}
+                  {isMyTurn ? 'Your turn' : `${usernames?.find((user: { id: number | null }) => user.id === game.currentPlayerId)?.username}'s turn`}
                 </span>
                 <span className="text-sm text-white/70">Moves: {game.totalMoves ?? 0}</span>
               </div>
@@ -195,7 +195,7 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
                 </LayoutGroup>
 
                 {!isMyTurn && (
-                  <SpectatorOverlay text={`Turno del jugador ${game.currentPlayerId}`} />
+                  <SpectatorOverlay text={`Turno del jugador ${usernames?.find((user: { id: number | null }) => user.id === game.currentPlayerId)?.username}`} />
                 )}
               </div>
 
