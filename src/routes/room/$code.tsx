@@ -10,6 +10,7 @@ import { Player, AVATAR_SEEDS } from '@/types/PlayerTypes'
 import { User } from '@/models/user'
 import ChatGame from '@/components/game/ChatGame'
 import GameInfo from '@/components/GameInfo'
+import { useQueryClient } from '@tanstack/react-query'
 
 
 export const route = createRoute({
@@ -30,6 +31,7 @@ function WaitingRoomPage() {
   const { data: roomData, isLoading } = useGetRoom(code)
   const { mutate: startGame } = useStartGame()
   const navigated = useRef(false)
+  const qc = useQueryClient();
 
   useGameHub(code, undefined, {
     onGameStarted: (gameId) => {
@@ -38,8 +40,10 @@ function WaitingRoomPage() {
         navigated.current = true;
         router.navigate({ to: '/room/$code/play', params: { code } });
       }
-    }
-  });
+    },
+    onPlayerJoined: () => qc.invalidateQueries({ queryKey: ['room', code] }),
+    onPlayerLeft: () => qc.invalidateQueries({ queryKey: ['room', code] }),
+  }); 
 
   const players: Player[] = useMemo(() => {
     if (!roomData?.users) return []
