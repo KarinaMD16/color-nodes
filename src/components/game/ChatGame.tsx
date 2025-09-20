@@ -4,7 +4,6 @@ import { getGameHub } from '@/services/gameHub'
 import { IoSend, IoChatbubbleEllipses, IoCloseSharp } from "react-icons/io5";
 import { ChatGameProps, ChatMessage } from '@/types/ChatTypes';
 
-
 export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<ChatGameProps>) {
   const { username } = useUser()
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -18,49 +17,43 @@ export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<Cha
   }, [messages])
 
   useEffect(() => {
-    if (!roomCode || !username) {
-      console.log('⚠️ Chat setup skipped - missing:', { roomCode: !!roomCode, username: !!username });
-      return;
-    }
+    if (!roomCode || !username) return;
 
     const chatHandler = (msg: ChatMessage) => {
-      
       if (msg?.id && msg?.username && msg?.message) {
         setMessages(prev => {
-          const updated = [...prev, msg];
-          return updated;
+          const exists = prev.some(existingMsg => existingMsg.id === msg.id);
+          if (exists) return prev;
+          return [...prev, msg];
         });
       }
     };
 
-    const hub = getGameHub(roomCode, username, {
+    const hub = getGameHub(roomCode, username);
+    
+    const cleanup = hub.registerHandlers({
       onChatMessage: chatHandler,
-      onPlayerJoined: (username) => console.log('👋 Player joined in chat component:', username),
-      onPlayerLeft: (username) => console.log('👋 Player left in chat component:', username)
-    })
+      onPlayerJoined: (username) => {},
+      onPlayerLeft: (username) => {}
+    });
 
-    hub.start().catch(console.error)
+    hub.start().catch(console.error);
 
-  }, [roomCode, username])
+    return () => {
+      cleanup();
+    };
+  }, [roomCode, username]);
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !roomCode || !username) {
-      console.warn('⚠️ Cannot send message: missing data', { 
-        hasMessage: !!newMessage.trim(), 
-        hasRoomCode: !!roomCode, 
-        hasUsername: !!username 
-      })
-      return
-    }
+    if (!newMessage.trim() || !roomCode || !username) return;
 
     try {
       const hub = getGameHub(roomCode, username)
       await hub.sendChatMessage(roomCode, username, newMessage.trim())
-    
       setNewMessage('')
       inputRef.current?.focus()
     } catch (error) {
-      console.error(' Error sending chat message:', error)
+      console.error('Error sending chat message:', error)
     }
   }
 
@@ -73,10 +66,7 @@ export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<Cha
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
-    if (isNaN(date.getTime())) {
-      console.warn('⚠️ Error formatting timestamp:', timestamp);
-      return '--:--';
-    }
+    if (isNaN(date.getTime())) return '--:--';
     return date.toLocaleTimeString('en-US', { 
       hour12: false, 
       hour: '2-digit', 
@@ -91,7 +81,12 @@ export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<Cha
           onClick={() => setIsExpanded(true)}
           className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg shadow-lg transition-all duration-200 flex items-center gap-2"
         >
-            <IoChatbubbleEllipses size={40} />
+          <IoChatbubbleEllipses size={40} />
+          {messages.length > 0 && (
+            <span className="bg-red-500 text-xs px-2 py-1 rounded-full animate-pulse">
+              {messages.length}
+            </span>
+          )}
         </button>
       </div>
     )
@@ -99,7 +94,6 @@ export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<Cha
 
   return (
     <div className="fixed bottom-4 right-4 w-90 h-96 bg-black/90 backdrop-blur-sm border border-white/20 rounded-lg flex flex-col z-50 shadow-2xl">
-      {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-white/20 bg-black/20">
         <div className="flex items-center gap-2">
           <span className="text-white font-bold text-sm">💬 Room Chat</span>
@@ -114,8 +108,7 @@ export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<Cha
         </button>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+ <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {messages.length === 0 ? (
           <div className="text-center text-white/50 text-sm py-8">
             💭 No messages yet. Start the conversation!
@@ -166,7 +159,6 @@ export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<Cha
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       <div className="p-3 border-t border-white/20 bg-black/20">
         <div className="flex gap-2">
           <input
