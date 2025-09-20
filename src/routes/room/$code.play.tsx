@@ -85,7 +85,6 @@ function PlayPage() {
   const isInProgress = currentGame?.status === 'InProgress'
   const winner = (room?.users as User[])?.find(u => u.id === currentGame.currentPlayerId)
 
-  // Render fase Setup
   if (isSetup) {
     return (
       <SetUpPhase
@@ -98,12 +97,10 @@ function PlayPage() {
     )
   }
 
-  // Render fase InProgress
   if (isInProgress) {
     return <GamePhase game={currentGame} setGame={setGame} />
   }
 
-  // Render final: ganador + leaderboard + botones
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center">
       <h1 className="text-6xl font-extrabold text-amber-400 mb-6 animate-pulse">
@@ -111,7 +108,6 @@ function PlayPage() {
       </h1>
       <p className="text-white/70 text-xl mb-4">¡Felicidades al ganador de esta partida!</p>
 
-      {/* Leaderboard */}
       <div className="bg-amber-200 border-4 border-black rounded-lg p-6 shadow-lg mb-6">
         <table className="table-auto text-black font-bold text-lg">
           <thead>
@@ -139,7 +135,6 @@ function PlayPage() {
         </table>
       </div>
 
-      {/* Botones */}
       <div className="flex gap-6">
         <button
           onClick={() => leaveMutation.mutate({ userId: userId!, roomCode })}
