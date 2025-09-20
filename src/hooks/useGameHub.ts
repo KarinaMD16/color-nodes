@@ -13,7 +13,7 @@ type Handlers = {
   onChatMessage?: () => void;
 };
 
-export function useGameHub(roomCode: string, gameId?: string, handlers?: Handlers) {
+export function useGameHub(roomCode: string, gameId?: string, handlers: Handlers = {}) {
   const qc = useQueryClient();
   const { username, id: localUserId, setUser } = useUser();
   const handlersRef = useRef(handlers);
@@ -25,7 +25,7 @@ export function useGameHub(roomCode: string, gameId?: string, handlers?: Handler
     const hub = getGameHub(roomCode, username, {
       onStateUpdated: (s: GameStateResponse) => {
         if (s?.gameId) qc.setQueryData(['game', s.gameId], s);
-        handlersRef.current?.onUpdate?.(s);
+        handlersRef.current.onUpdate?.(s);
       },
       onTurnChanged: ({ currentPlayerId }) => {
         if (!gameId) return;
@@ -33,7 +33,7 @@ export function useGameHub(roomCode: string, gameId?: string, handlers?: Handler
         if (prev) {
           const patched = { ...prev, currentPlayerId };
           qc.setQueryData(['game', gameId], patched);
-          handlersRef.current?.onUpdate?.(patched);
+          handlersRef.current.onUpdate?.(patched);
         }
       },
       onHitFeedback: ({ message }) => console.log('hit', message),
@@ -49,18 +49,18 @@ export function useGameHub(roomCode: string, gameId?: string, handlers?: Handler
       },
       onPlayerJoined: () => {
         qc.invalidateQueries({ queryKey: ['room', roomCode] });
-        handlersRef.current?.onPlayerJoined?.();
+        handlersRef.current.onPlayerJoined?.();
       },
       onPlayerLeft: () => {
         qc.invalidateQueries({ queryKey: ['room', roomCode] });
-        handlersRef.current?.onPlayerLeft?.();
+        handlersRef.current.onPlayerLeft?.();
       },
       onChatMessage: () => {
         qc.invalidateQueries({ queryKey: ['chat', roomCode] });
-        handlersRef.current?.onChatMessage?.();
+        handlersRef.current.onChatMessage?.();
       },
-      onGameStarted: (gameId) => handlersRef.current?.onGameStarted?.(gameId),
-      onGameFinished: (gameId) => handlersRef.current?.onGameFinished?.(gameId),
+      onGameStarted: (gameId) => handlersRef.current.onGameStarted?.(gameId),
+      onGameFinished: (gameId) => handlersRef.current.onGameFinished?.(gameId),
     });
 
     hub.start().catch(console.error);
