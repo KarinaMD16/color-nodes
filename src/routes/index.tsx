@@ -1,6 +1,5 @@
 import { createRoute } from '@tanstack/react-router'
 import { rootRoute } from './__root'
-import Squares from '../components/Squares';
 import { usePostCreateRoom, usePostCreateUser } from '../hooks/userHooks';
 import { useUser } from '../context/userContext';
 import router from '../router';
@@ -87,16 +86,16 @@ function IndexPage() {
   }
 
   return (
-    <div className="relative w-full min-h-screen bg-black">
-      <div className="fixed inset-0 w-full h-full bg-black">
-        <Squares
-          speed={0.5}
-          squareSize={40}
-          direction='diagonal'
-          borderColor='#297023'
-          hoverFillColor='#5C5C5C'
-        />
-      </div>
+    <div className="relative w-screen h-screen overflow-hidden">
+      <video
+        className="fixed top-0 left-0 w-full h-full object-cover z-0"
+        src="https://packaged-media.redd.it/ngwgetoqr7y51/pb/m2-res_1080p.mp4?m=DASHPlaylist.mpd&v=1&e=1757149200&s=36fd0cd68fdebb032055efa60d97a8830317d1e7"
+        autoPlay
+        loop
+        muted
+        playsInline
+      />
+      <div className="fixed inset-0 bg-black/50 z-1"></div>
       <Leaderboard />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-2xl mx-auto p-6 text-center font-press-start">
