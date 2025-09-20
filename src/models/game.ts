@@ -7,7 +7,7 @@ export interface GameStateResponse {
   cups: string[];
   hits: number;
   totalMoves: number;
-  currentPlayerId: number | null;
+  currentPlayerId: number;
   playerOrder: number[];
   turnEndsAtUtc: string;
   targetPattern: string[] | null;

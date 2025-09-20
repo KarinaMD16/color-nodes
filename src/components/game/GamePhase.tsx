@@ -21,14 +21,14 @@ import DroppableSlot from './DroppableSlot'
 import { useMemo, useState } from 'react'
 import { AVATAR_SEEDS, Player } from '@/types/PlayerTypes'
 import { PlayersList } from './PlaeyrList'
-import { useGetUsernames } from '@/hooks/userHooks'
+import { useGetUsernames, usePostLeaveRoom } from '@/hooks/userHooks'
 
 const CUP_SIZE = 110
 
 const GamePhase = ({ game, setGame }: GamePhaseProps) => {
   const { id: userId } = useUser()
   const playerId = Number(userId) || 0
-
+  const { mutate: leaveRoom } = usePostLeaveRoom()
   const { items, isAnimating } = useAnimatedCups(game?.cups ?? [])
   const board = useMemo(() => items.map((it) => ({ id: it.id, hex: it.hex })), [items])
 
@@ -59,6 +59,13 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
     if (fromIndex === toIndex) return
     await swapMove.mutateAsync({ playerId, fromIndex, toIndex })
   }
+
+    const handleLeaveRoom = () => {
+      leaveRoom({ 
+        userId:  game?.currentPlayerId, 
+        roomCode: game.roomCode 
+      })
+    }
 
   const grid = (
     <motion.div
@@ -116,8 +123,10 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
           <div className="max-w-full mx-auto">
             <div className="flex justify-between">
               <h2 className="text-xl mb-4">Game in progress</h2>
-              <div className="flex flex-col items-end">
-              </div>
+              {game.currentPlayerId === playerId && (
+                <button onClick={handleLeaveRoom}>Leave Room</button>
+              )}
+
             </div>
             <PlayersList
               players={players}
