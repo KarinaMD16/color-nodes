@@ -3,15 +3,19 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { GameStateResponse } from '@/models/game';
 import { getGameHub } from '@/services/gameHub';
 import { useUser } from '@/context/userContext';
-import { q } from 'framer-motion/client';
 
-export function useGameHub(roomCode: string, gameId?: string, onUpdate?: (s: GameStateResponse) => void) {
+export function useGameHub(
+  roomCode: string,
+  gameId?: string,
+  onUpdate?: (s: GameStateResponse) => void
+) {
   const qc = useQueryClient();
   const { username, id: localUserId, setUser } = useUser();
 
   const onUpdateRef = useRef(onUpdate);
   useEffect(() => { onUpdateRef.current = onUpdate; }, [onUpdate]);
 
+  // Conectar y suscribirse a la SALA
   useEffect(() => {
     if (!roomCode || !username) return;
 
@@ -31,34 +35,40 @@ export function useGameHub(roomCode: string, gameId?: string, onUpdate?: (s: Gam
       },
       onHitFeedback: ({ message }) => console.log('hit', message),
       onFinished: (s) => console.log('fin juego', s),
-      onConn: (state, info) => {
-        console.log('hub onConn', state, info);
+
+      // 👇 Ajuste: recibe (state, info) y re-suscribe sala
+      onConn: async (_state, info) => {
+        try { await hub.subscribeRoom(roomCode); } catch { /* no-op */ }
         const u = (info?.user ?? info) as { id?: number; username?: string } | undefined;
-        if (u?.id && u?.username) {
-          if (!localUserId || localUserId <= 0) {
-            setUser(Number(u.id), String(u.username));
-          }
+        if (u?.id && u?.username && (!localUserId || localUserId <= 0)) {
+          setUser(Number(u.id), String(u.username));
         }
       },
-      onPlayerJoined: () => {
-        qc.invalidateQueries({ queryKey: ['room', roomCode] })
-      },
-      onPlayerLeft: () => {
-        qc.invalidateQueries({ queryKey: ['room', roomCode] })
-      },
-      onChatMessage: () => {
-        qc.invalidateQueries({ queryKey: ['chat', roomCode] }) 
-      }
+
+      onPlayerJoined: () => qc.invalidateQueries({ queryKey: ['room', roomCode] }),
+      onPlayerLeft: () => qc.invalidateQueries({ queryKey: ['room', roomCode] }),
+      onChatMessage: () => qc.invalidateQueries({ queryKey: ['chat', roomCode] }),
     });
 
-    hub.start().catch(console.error);
+    hub.start()
+      .then(() => hub.subscribeRoom(roomCode))
+      .catch(console.error);
 
-  }, [roomCode, username]);
+    // (Opcional) si quieres cerrar conexión al desmontar este hook:
+    // return () => { hub.disconnect?.().catch(() => {}); };
 
+  }, [roomCode, username]); // <- depende sólo de sala/usuario
+
+  // Suscribirse al JUEGO cuando haya gameId y limpiar al salir
   useEffect(() => {
     if (!roomCode || !username || !gameId) return;
     const hub = getGameHub(roomCode, username);
-    hub.joinGame(gameId).catch(console.error);
+
+    hub.subscribeGame(gameId).catch(console.error);
+
+    return () => {
+      hub.unsubscribeGame(gameId).catch(() => { /* no-op */ });
+    };
   }, [roomCode, username, gameId]);
 
   return {};

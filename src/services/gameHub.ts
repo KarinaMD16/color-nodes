@@ -11,7 +11,7 @@ type Handlers = {
   onChatMessage?: (msg: any) => void;
 };
 
-const HUB_BASE_URL = 'http://26.166.216.244:5197';
+const HUB_BASE_URL = 'http://26.233.244.31:7081'; // tu backend
 const instances = new Map<string, ReturnType<typeof build>>();
 
 function build(hubUrl: string, roomCode: string, username: string, initialHandlers: Handlers = {}) {
@@ -21,76 +21,53 @@ function build(hubUrl: string, roomCode: string, username: string, initialHandle
     .build();
 
   const handlersMap = new Map<string, Set<Function>>();
+  const add = (evt: string, h: Function) => { if (!handlersMap.has(evt)) handlersMap.set(evt, new Set()); handlersMap.get(evt)!.add(h); };
+  const del = (evt: string, h: Function) => { handlersMap.get(evt)?.delete(h); };
+  const fire = (evt: string, ...args: any[]) => handlersMap.get(evt)?.forEach(h => { try { h(...args); } catch (e) { console.error(`Error in ${evt} handler:`, e); } });
 
-  const addHandler = (event: string, handler: Function) => {
-    if (!handlersMap.has(event)) {
-      handlersMap.set(event, new Set());
-    }
-    handlersMap.get(event)!.add(handler);
-  };
+  // Server->Client
+  conn.on('StateUpdated', s => requestAnimationFrame(() => fire('StateUpdated', s)));
+  conn.on('TurnChanged', id => requestAnimationFrame(() => fire('TurnChanged', { currentPlayerId: id })));
+  conn.on('HitFeedback', (m: string) => fire('HitFeedback', { message: m }));
+  conn.on('Finished', s => fire('Finished', s));
+  conn.on('PlayerJoined', u => fire('PlayerJoined', u));
+  conn.on('PlayerLeft', u => fire('PlayerLeft', u));
+  conn.on('ChatMessage', msg => fire('ChatMessage', msg));
 
-  const removeHandler = (event: string, handler: Function) => {
-    if (handlersMap.has(event)) {
-      handlersMap.get(event)!.delete(handler);
-    }
-  };
-
-  const callHandlers = (event: string, ...args: any[]) => {
-    const handlers = handlersMap.get(event);
-    if (handlers && handlers.size > 0) {
-      handlers.forEach(handler => {
-        try {
-          handler(...args);
-        } catch (error) {
-          console.error(`Error in ${event} handler:`, error);
-        }
-      });
-    }
-  };
-
-  conn.on('StateUpdated', s => requestAnimationFrame(() => callHandlers('StateUpdated', s)));
-  conn.on('TurnChanged', id => requestAnimationFrame(() => callHandlers('TurnChanged', { currentPlayerId: id })));
-  conn.on('HitFeedback', (m: string) => callHandlers('HitFeedback', { message: m }));
-  conn.on('Finished', s => callHandlers('Finished', s));
-  conn.on('PlayerJoined', u => callHandlers('PlayerJoined', u));
-  conn.on('PlayerLeft', u => callHandlers('PlayerLeft', u));
-  conn.on('ChatMessage', msg => callHandlers('ChatMessage', msg));
-
-  conn.onreconnecting(err => callHandlers('Conn', 'reconnecting', err));
-  conn.onreconnected(async id => {
-    callHandlers('Conn', 'connected', { connId: id, reconnected: true });
-    try {
-      await conn.invoke('JoinRoom', roomCode, username);
-      if (lastGameId) {
-        await conn.invoke('JoinGame', lastGameId);
-      }
-    } catch (error) {
-      console.error('Error re-joining after reconnect:', error);
-    }
-  });
-
-  conn.onclose(err => callHandlers('Conn', 'disconnected', err));
-
+  // Conexión
   let started = false;
   let startPromise: Promise<void> | null = null;
   let lastGameId: string | null = null;
+  let lastRoomCode: string | null = roomCode;
+
+  conn.onreconnecting(err => fire('Conn', 'reconnecting', err));
+  conn.onreconnected(async id => {
+    fire('Conn', 'connected', { connId: id, reconnected: true });
+    try {
+      if (lastRoomCode) await conn.invoke('SubscribeRoom', lastRoomCode);
+      if (lastGameId) await conn.invoke('SubscribeGame', lastGameId);
+    } catch (error) {
+      console.error('Error re-subscribing after reconnect:', error);
+    }
+  });
+  conn.onclose(err => fire('Conn', 'disconnected', err));
 
   async function start() {
     if (started) return;
     if (startPromise) return startPromise;
 
     startPromise = (async () => {
-      callHandlers('Conn', 'connecting', { hubUrl });
-      
+      fire('Conn', 'connecting', { hubUrl });
       try {
         await conn.start();
         started = true;
-        callHandlers('Conn', 'connected', { connId: conn.connectionId });
-        
+        fire('Conn', 'connected', { connId: conn.connectionId });
+
+        // Primer alta con “JoinRoom” para avisos de PlayerJoined una sola vez
         await conn.invoke('JoinRoom', roomCode, username);
-        
+
         if (lastGameId) {
-          await conn.invoke('JoinGame', lastGameId);
+          await conn.invoke('SubscribeGame', lastGameId);
         }
       } catch (error) {
         started = false;
@@ -98,20 +75,37 @@ function build(hubUrl: string, roomCode: string, username: string, initialHandle
       }
     })();
 
-    try { 
-      await startPromise; 
-    } finally { 
-      startPromise = null; 
+    try { await startPromise; } finally { startPromise = null; }
+  }
+
+  async function stop() {
+    if (conn.state !== signalR.HubConnectionState.Disconnected) {
+      await conn.stop();
+      started = false;
     }
   }
 
-  async function stop() {}
-
-  async function joinGame(gameId: string) {
+  async function subscribeRoom(rc: string) {
+    lastRoomCode = rc;
+    if (conn.state === signalR.HubConnectionState.Connected) {
+      await conn.invoke('SubscribeRoom', rc);
+    }
+  }
+  async function subscribeGame(gameId: string) {
     lastGameId = gameId;
     if (conn.state === signalR.HubConnectionState.Connected) {
-      await conn.invoke('JoinGame', gameId);
+      await conn.invoke('SubscribeGame', gameId);
     }
+  }
+  async function unsubscribeGame(gameId: string) {
+    if (conn.state === signalR.HubConnectionState.Connected) {
+      await conn.invoke('UnsubscribeGame', gameId);
+    }
+    if (lastGameId === gameId) lastGameId = null;
+  }
+
+  async function joinGame(gameId: string) { // alias compat
+    await subscribeGame(gameId);
   }
 
   async function sendChatMessage(roomCode: string, username: string, message: string) {
@@ -123,43 +117,37 @@ function build(hubUrl: string, roomCode: string, username: string, initialHandle
   }
 
   function registerHandlers(newHandlers: Handlers): () => void {
-    const cleanupFunctions: Array<() => void> = [];
-
-    Object.entries(newHandlers).forEach(([eventName, handler]) => {
-      if (handler) {
-        const mappedEventName = eventName.replace('on', '');
-        addHandler(mappedEventName, handler);
-        cleanupFunctions.push(() => removeHandler(mappedEventName, handler));
-      }
+    const cleanup: Array<() => void> = [];
+    Object.entries(newHandlers).forEach(([k, h]) => {
+      if (!h) return;
+      const evt = k.replace('on', ''); // onStateUpdated -> StateUpdated
+      add(evt, h);
+      cleanup.push(() => del(evt, h));
     });
-
-    return () => {
-      cleanupFunctions.forEach(cleanup => cleanup());
-    };
+    return () => cleanup.forEach(fn => fn());
   }
 
-  if (Object.keys(initialHandlers).length > 0) {
-    registerHandlers(initialHandlers);
-  }
+  if (Object.keys(initialHandlers).length > 0) registerHandlers(initialHandlers);
 
-  return { 
-    connection: conn, 
-    start, 
-    stop, 
-    joinGame, 
+  return {
+    connection: conn,
+    start,
+    stop,
+    subscribeRoom,
+    subscribeGame,
+    unsubscribeGame,
+    joinGame,
     sendChatMessage,
-    registerHandlers
+    registerHandlers,
   };
 }
 
 export function getGameHub(roomCode: string, username: string, handlers?: Handlers) {
   const hubUrl = new URL('/gameHub', HUB_BASE_URL.replace(/\/+$/, '')).toString();
   const key = `${roomCode}::${username}`;
-  
   if (!instances.has(key)) {
     instances.set(key, build(hubUrl, roomCode, username, handlers));
   }
-  
   return instances.get(key)!;
 }
 
