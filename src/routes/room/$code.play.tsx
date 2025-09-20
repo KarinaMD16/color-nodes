@@ -102,59 +102,72 @@ function PlayPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center">
-      <h1 className="text-6xl font-extrabold text-amber-400 mb-6 animate-pulse">
-        🎉 ¡{winner ? winner.username : `Jugador ${currentGame.currentPlayerId}`} ganó! 🎉
-      </h1>
-      <p className="text-white/70 text-xl mb-4">¡Felicidades al ganador de esta partida!</p>
-
-      <div className="bg-amber-200 border-4 border-black rounded-lg p-6 shadow-lg mb-6">
-        <table className="table-auto text-black font-bold text-lg">
-          <thead>
-            <tr className="border-b-2 border-black">
-              <th className="px-4 py-2 text-left">Rank</th>
-              <th className="px-4 py-2 text-left">Player</th>
-              <th className="px-4 py-2 text-left">Score</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leaderboardQuery.data?.length ? (
-              leaderboardQuery.data.map(u => (
-                <tr key={u.rank}>
-                  <td className="px-4 py-2">#{u.rank}</td>
-                  <td className="px-4 py-2">{u.username}</td>
-                  <td className="px-4 py-2">{u.score}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={3} className="px-4 py-2 text-center">Cargando...</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="flex gap-6">
-        <button
-          onClick={() => leaveMutation.mutate({ userId: userId!, roomCode })}
-          disabled={leaveMutation.isPending}
-          className="bg-red-500 border-4 border-black text-white font-bold px-8 py-3 rounded-lg text-xl shadow-md hover:bg-red-600 transition-all"
-        >
-          Leave
-        </button>
-
-        <button
-          onClick={() => {
-            localStorage.removeItem(`game_${roomCode}`)
-            router.navigate({ to: '/room/$code', params: { code: roomCode } })
+    <PantallaFondo texto="" subtexto="" overlay="none">
+      <section
+        className="nes-container mx-auto max-w-3xl p-6
+                 !bg-white !border-4 !border-black
+                 !shadow-[8px_8px_0_0_#000] !rounded-none"
+      >
+        <h1
+          className="text-center mb-4 text-3xl md:text-4xl font-black uppercase tracking-wider"
+          style={{
+            color: '#000',
+            textShadow:
+              '0 2px 0 #caa24e, 0 0 1px #caa24e, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000',
           }}
-          className="bg-blue-500 border-4 border-black text-white font-bold px-8 py-3 rounded-lg text-xl shadow-md hover:bg-blue-600 transition-all"
         >
-          Play again
-        </button>
-      </div>
-    </div>
+          {`${winner ? winner.username : `player ${currentGame.currentPlayerId}`} wins!`}
+        </h1>
+
+        <div className="mx-auto mb-6 w-[min(92vw,620px)]
+                      nes-container !border-4 !border-black !rounded-none"
+          style={{ background: '#c6af85' }}>
+          <table className="w-full text-left font-bold text-black">
+            <thead className="border-b-2 border-black/80">
+              <tr>
+                <th className="px-3 py-2">Rank</th>
+                <th className="px-3 py-2">Player</th>
+                <th className="px-3 py-2">Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaderboardQuery.data?.length ? (
+                leaderboardQuery.data.map(u => (
+                  <tr key={u.rank} className="odd:bg-black/5">
+                    <td className="px-3 py-2">#{u.rank}</td>
+                    <td className="px-3 py-2">{u.username}</td>
+                    <td className="px-3 py-2">{u.score}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={3} className="px-3 py-4 text-center">Loading...</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex justify-center gap-8 mt-6">
+          <button
+            onClick={() => leaveMutation.mutate({ userId: userId!, roomCode })}
+            disabled={leaveMutation.isPending}
+            className="nes-btn is-error"
+          >
+            Leave
+          </button>
+          <button
+            onClick={() => {
+              localStorage.removeItem(`game_${roomCode}`)
+              router.navigate({ to: '/room/$code', params: { code: roomCode } })
+            }}
+            className="nes-btn is-primary"
+          >
+            Play again
+          </button>
+        </div>
+      </section>
+    </PantallaFondo>
   )
 }
 
