@@ -31,15 +31,15 @@ function WaitingRoomPage() {
   const { mutate: startGame } = useStartGame()
   const navigated = useRef(false)
 
-  useGameHub(code, undefined, (s) => {
-    if (s?.gameId) {
-      localStorage.setItem(`game_${code}`, s.gameId)
+  useGameHub(code, undefined, {
+    onGameStarted: (gameId) => {
+      localStorage.setItem(`game_${code}`, gameId);
       if (!navigated.current) {
-        navigated.current = true
-        router.navigate({ to: '/room/$code/play', params: { code } })
+        navigated.current = true;
+        router.navigate({ to: '/room/$code/play', params: { code } });
       }
     }
-  })
+  });
 
   const players: Player[] = useMemo(() => {
     if (!roomData?.users) return []
