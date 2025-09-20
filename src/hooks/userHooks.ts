@@ -5,7 +5,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { useUser } from "@/context/userContext";
 import { getUsernames } from "../services/userService";
 import { toast } from "@/lib/toast";
-import colorNodesAPI from "@/api/client";
 
 export function usePostCreateRoom() {
     return useMutation({
