@@ -30,6 +30,9 @@ function PlayPage() {
     try {
       const hub = getGameHub(roomCode, username || "")
       await hub.connection.invoke("RequestRoomReset", roomCode, username)
+
+      localStorage.removeItem(`game_${roomCode}`)
+      router.navigate({ to: '/room/$code', params: { code: roomCode } })
     } catch (e) {
       console.error("Error rejoining room:", e)
     }
