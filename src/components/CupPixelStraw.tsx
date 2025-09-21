@@ -39,10 +39,6 @@ export default function CupPixelStraw({
             <rect x="12" y="2" width="2" height="6" fill="var(--straw)" />
             <rect x="11" y="2" width="1" height="6" fill="var(--outline)" />
             <rect x="14" y="2" width="1" height="6" fill="var(--outline)" />
-            {/* codo + tramo horizontal */}
-            <rect x="14" y="6" width="4" height="2" fill="var(--straw)" />
-            <rect x="18" y="6" width="1" height="2" fill="var(--outline)" />
-            <rect x="13" y="5" width="1" height="3" fill="var(--outline)" />
 
             {/* ===== TAPA ===== */}
             {/* contorno tapa */}

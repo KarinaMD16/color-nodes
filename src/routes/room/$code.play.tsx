@@ -30,6 +30,7 @@ function PlayPage() {
   const qc = useQueryClient()
   const [gameId, setGameId] = useState<string | null>(null)
   const { data: room } = useGetRoom(roomCode)
+  const { data: currentGame, error } = useGameState(gameId || undefined)
 
   useEffect(() => {
     if (!ready) return;
@@ -42,8 +43,6 @@ function PlayPage() {
       setGameId(stored);
     }
   }, [ready, roomCode, room?.activeGameId]);
-
-  const { data: currentGame, error } = useGameState(gameId || undefined)
 
   useEffect(() => {
     if (!error) return
@@ -74,7 +73,7 @@ function PlayPage() {
   })
   const leaveMutation = usePostLeaveRoom()
 
-  if (!ready || !validUser) return <PantallaFondo texto="Obteniendo usuario..." />
+  if (!ready || !validUser) return <PantallaFondo texto="Loading users..." />
   if (!currentGame) return <PantallaFondo texto="Waiting for game to start..." />
 
   const isMyTurn =

@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getGame, postGameStart, postPlaceInitial, postSwap, postTick } from '@/services/gameService';
 import { PlaceInitialCupsRequest, SwapRequest, GameStateResponse } from '@/models/game';
-import { getRoom } from '@/services/userService';
 
 export const useGameState = (gameId?: string) =>
   useQuery({

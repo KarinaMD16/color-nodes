@@ -2,7 +2,6 @@ import { createRoute, useNavigate } from '@tanstack/react-router'
 import { rootRoute } from './__root'
 import { usePostCreateRoom, usePostCreateUser } from '../hooks/userHooks';
 import { useUser } from '../context/userContext';
-import router from '../router';
 import { useState } from 'react';
 import Leaderboard from '@/components/leaderBoard/LeaderBoard';
 import GameInfo from '@/components/GameInfo';
