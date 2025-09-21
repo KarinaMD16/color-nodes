@@ -15,7 +15,7 @@ type Handlers = {
 //elein: 26.48.186.190
 //lando: 26.166.216.244
 
-const HUB_BASE_URL = 'http://26.166.216.244:5197';
+const HUB_BASE_URL = 'http://26.233.244.31:5197';
 const instances = new Map<string, ReturnType<typeof build>>();
 
 function build(hubUrl: string, roomCode: string, username: string, initialHandlers: Handlers = {}) {
