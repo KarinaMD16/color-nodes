@@ -4,6 +4,7 @@ import { usePostJoinRoom } from '../hooks/userHooks'
 import { useState } from 'react'
 import { useUser } from '../context/userContext'
 import router from '../router'
+import Leaderboard from '@/components/leaderBoard/LeaderBoard'
 
 export const joinRoute = createRoute({
   component: JoinPage,
@@ -36,6 +37,7 @@ function JoinPage() {
         playsInline
       />
       <div className="fixed inset-0 bg-black/50 z-1"></div>
+      <Leaderboard />
       <div className="fixed inset-0 flex items-center font-press-start text-white text-left justify-center p-4 z-10">
         <form onSubmit={handleSubmit} className="w-full space-y-6 max-w-2xl mx-auto p-6">
           <h1 className="font-press-start text-center text-3xl md:text-4xl mb-8 whitespace-nowrap">
