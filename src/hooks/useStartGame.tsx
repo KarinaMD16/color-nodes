@@ -10,7 +10,6 @@ export function useStartGameWithWatchdog(roomCode: string, userId: number) {
   const qc = useQueryClient()
   const start = useStartGame()
 
-  // Reset cuando cambian los parámetros
   useEffect(() => {
     if (!roomCode || !userId) {
       startedRef.current = false
@@ -36,7 +35,6 @@ export function useStartGameWithWatchdog(roomCode: string, userId: number) {
           setGame(gs)
           if (gs?.gameId) {
             qc.setQueryData(['game', gs.gameId], gs)
-            // invalidar queries relacionadas
             qc.invalidateQueries({ queryKey: ['room', roomCode] })
           }
         },

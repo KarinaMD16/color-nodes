@@ -14,12 +14,12 @@ export const joinRoute = createRoute({
 function JoinPage() {
   const [roomCode, setRoomCode] = useState('');
   const { username: ctxName } = useUser();
-  const [name, setName] = useState(ctxName ?? '');     // ← estado local editable
+  const [name, setName] = useState(ctxName ?? ''); 
   const { mutate: postJoinRoom, isPending } = usePostJoinRoom();
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault?.();
-    if (isPending) return; // avoid duplicate submits while loading
+    if (isPending) return; 
     const finalName = name.trim();
     if (!roomCode || !finalName) return;
     postJoinRoom({ username: finalName, roomCode });
@@ -51,7 +51,7 @@ function JoinPage() {
               id="username_field"
               className="nes-input is-dark w-full text-left"
               value={name}
-              onChange={(e) => setName(e.target.value)}  // ← editable
+              onChange={(e) => setName(e.target.value)} 
               placeholder="Enter your username"
               disabled={isPending}
             />

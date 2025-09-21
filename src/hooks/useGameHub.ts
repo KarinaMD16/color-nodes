@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { GameStateResponse } from '@/models/game';
 import { getGameHub } from '@/services/gameHub';
 import { useUser } from '@/context/userContext';
-import { q } from 'framer-motion/client';
 
 export function useGameHub(roomCode: string, gameId?: string, onUpdate?: (s: GameStateResponse) => void) {
   const qc = useQueryClient();

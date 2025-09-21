@@ -1,9 +1,12 @@
 import { useGetUsersOrderedByScore } from "@/hooks/userHooks"
+import CupLoader from "../CupLoader"
 
 export default function Leaderboard() {
   const { data: users, isLoading, isError } = useGetUsersOrderedByScore()
 
-  if (isLoading) return <div className="text-white">Loading leaderboard...</div>
+  if (isLoading) {
+    return  <CupLoader/>
+  }
   if (isError) return <div className="text-red-500">Error loading leaderboard</div>
 
   return (
@@ -22,7 +25,6 @@ export default function Leaderboard() {
         </table>
       </div>
 
-      {/* Contenedor scrollable, barra oculta */}
       <div
         className="flex-1 overflow-y-scroll scrollbar-none"
         style={{ paddingRight: '2px' }}
@@ -44,7 +46,6 @@ export default function Leaderboard() {
         </table>
       </div>
 
-      {/* Estilos para ocultar scrollbar en todos los navegadores */}
       <style>{`
         div::-webkit-scrollbar {
           display: none;

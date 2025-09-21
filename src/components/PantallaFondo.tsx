@@ -1,11 +1,6 @@
 import bgImage from '@/assets/orig.png'
-
-interface PantallaFondoProps {
-  texto: string
-  subtexto?: string
-  children?: React.ReactNode
-  overlay?: 'dark' | 'none'   // 👈 NUEVO
-}
+import { PantallaFondoProps } from '@/types/appTypes'
+import CupLoader from './CupLoader'
 
 const PantallaFondo = ({ texto, subtexto, children, overlay = 'dark' }: PantallaFondoProps) => {
   return (
@@ -24,7 +19,16 @@ const PantallaFondo = ({ texto, subtexto, children, overlay = 'dark' }: Pantalla
               <div className="mt-4">{children}</div>
             ) : (
               <div className="flex justify-center">
-                <div className="animate-spin text-4xl">🎮</div>
+                      <CupLoader
+                        size={200}
+                        speedSec={1.0}
+                        cupColor="#22d3ee"
+                        lidColor="#eab308"
+                        strawColor="#ef4444"
+                        rimColor="#0f172a"
+                        bg="transparent"
+                        label="Cargando Color Nodes…"
+                      />
               </div>
             )}
           </div>
