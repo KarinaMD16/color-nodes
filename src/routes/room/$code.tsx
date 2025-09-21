@@ -50,10 +50,11 @@ function WaitingRoomPage() {
       isHost: user.id === roomData.leaderId, // host real
       avatar: AVATAR_SEEDS[index % AVATAR_SEEDS.length]
     }))
-  }, [roomData?.users])
+  }, [roomData?.users, roomData?.leaderId])
 
-  const isHost = roomData?.users?.[0]?.username === ctxName || roomData?.users?.[0]?.name === ctxName
-  useEffect(() => {
+  const isHost = roomData?.leaderId === ctxId
+
+ useEffect(() => {
     setCanStartGame(players.length >= 2 && isHost)
   }, [players, isHost])
   
