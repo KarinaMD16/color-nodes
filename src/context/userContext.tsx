@@ -36,7 +36,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       return
     }
 
-    console.log('👤 Setting user:', { newId, newName })
     setId(newId)
     setUsername(newName)
     localStorage.setItem(LOCAL_KEY, JSON.stringify({ id: newId, username: newName }))

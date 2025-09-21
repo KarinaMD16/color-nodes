@@ -98,6 +98,7 @@ export function useGetRoom(roomCode: string) {
         queryKey: ['room', roomCode],
         queryFn: () => getRoom(roomCode),
         enabled: !!roomCode,
+      refetchOnMount: 'always',
         refetchInterval: (q) => (q.state.data?.activeGameId ? false : 1500),
         refetchOnWindowFocus: true,
     })

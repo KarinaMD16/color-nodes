@@ -1,4 +1,4 @@
-import { createRoute } from '@tanstack/react-router'
+import { createRoute, useNavigate } from '@tanstack/react-router'
 import { rootRoute } from './__root'
 import { usePostCreateRoom, usePostCreateUser } from '../hooks/userHooks';
 import { useUser } from '../context/userContext';
@@ -21,6 +21,7 @@ function IndexPage() {
   const [inputUsername, setInputUsername] = useState(username || '')
   const [isCreatingRoom, setIsCreatingRoom] = useState(false)
 
+  const navigate = useNavigate()
   const handleCreateRoom = () => {
     if (!inputUsername.trim()) {
       toast.warning('Please enter a username')
@@ -28,7 +29,6 @@ function IndexPage() {
     }
 
     setIsCreatingRoom(true)
-    console.log('🚀 Creating user first:', inputUsername)
 
     createUser(inputUsername, {
       onSuccess: (userData) => {
@@ -50,7 +50,7 @@ function IndexPage() {
               return
             }
 
-            router.navigate({
+            navigate({
               to: '/room/$code',
               params: { code: roomCode }
             })
@@ -73,7 +73,7 @@ function IndexPage() {
       toast.warning('Please enter a username')
       return
     }
-    router.navigate({ to: '/join' })
+    navigate({ to: '/join' })
   }
 
   return (

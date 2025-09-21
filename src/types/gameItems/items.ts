@@ -23,3 +23,9 @@ export type GamePhaseProps = {
   game: GameStateResponse
   setGame: (g: GameStateResponse) => void
 }
+
+
+export type ResultsProps = {
+  state: any
+  onContinue: () => void
+}
