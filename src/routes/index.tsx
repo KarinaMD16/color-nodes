@@ -30,47 +30,38 @@ function IndexPage() {
     setIsCreatingRoom(true)
     console.log('🚀 Creating user first:', inputUsername)
 
-    // Primero crear el usuario
     createUser(inputUsername, {
       onSuccess: (userData) => {
-        console.log('✅ User created:', userData)
         
-        // Establecer el usuario en el contexto
         const userId = userData.id || userData.userId
         if (userId) {
           setUser(userId, inputUsername)
         }
 
-        // Ahora crear la sala con el usuario
         createRoom(
           inputUsername,
           {
             onSuccess: (roomData) => {
-              console.log('✅ Room created:', roomData)
 
             const roomCode = roomData.code 
             if (!roomCode) {
-              console.error('❌ No room code in response:', roomData)
               toast.error('Error: No room code received')
               setIsCreatingRoom(false)
               return
             }
 
-            // Navegar a la sala
             router.navigate({
               to: '/room/$code',
               params: { code: roomCode }
             })
           },
-          onError: (error) => {
-            console.error('❌ Error creating room:', error)
+          onError: () => {
             toast.error('Error creating room. Please try again.')
             setIsCreatingRoom(false)
           }
         })
       },
-      onError: (error) => {
-        console.error('❌ Error creating user:', error)
+      onError: () => {
         toast.error('Error creating user. Please try again.')
         setIsCreatingRoom(false)
       }

@@ -27,14 +27,12 @@ export function usePostJoinRoom() {
       postJoinRoom(username, roomCode),
 
     onSuccess: (data, vars) => {
-      // 1) intenta formatos comunes
       const fromServer =
         (data?.user ?? data?.me ?? data?.player) as { id?: number; username?: string } | undefined;
 
       let uid   = fromServer?.id ?? data?.userId ?? null;
       let uname = fromServer?.username ?? data?.username ?? vars.username;
 
-      // 2) fallback: búscate en data.users por username
       if (!uid && Array.isArray(data?.users) && uname) {
         const me = data.users.find((u: any) =>
           String(u?.username ?? "").toLowerCase() === String(uname).toLowerCase()
@@ -45,17 +43,15 @@ export function usePostJoinRoom() {
         }
       }
 
-      // 3) si hay (id, username) válidos -> persistir
       if (uid && uname) {
-        setUser(Number(uid), String(uname)); // ← guarda en contexto + localStorage
+        setUser(Number(uid), String(uname)); 
       } else {
         console.warn("⚠️ join success sin userId/username. Data:", data);
       }
 
-      // 4) navegar
       const code = data?.code ?? data?.roomCode ?? vars.roomCode;
       if (!code) {
-        console.error("❌ join: no code", data);
+        console.error("error: no code", data);
         return;
       }
       navigate({ to: `/room/${code}` });
