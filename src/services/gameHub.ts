@@ -9,6 +9,7 @@ type Handlers = {
   onPlayerLeft?: (u: string) => void;
   onConn?: (status: 'connecting' | 'connected' | 'reconnecting' | 'disconnected', info?: any) => void;
   onChatMessage?: (msg: any) => void;
+  onForceRejoin?: (roomCode: string) => void;
 };
 
 const HUB_BASE_URL = 'http://26.233.244.31:7081'; // tu backend
@@ -50,6 +51,7 @@ function build(hubUrl: string, roomCode: string, username: string, initialHandle
       console.error('Error re-subscribing after reconnect:', error);
     }
   });
+  conn.on('ForceRejoin', (rc: string) => fire('ForceRejoin', rc));
   conn.onclose(err => fire('Conn', 'disconnected', err));
 
   async function start() {

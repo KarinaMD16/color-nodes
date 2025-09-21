@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { GameStateResponse } from '@/models/game';
 import { getGameHub } from '@/services/gameHub';
 import { useUser } from '@/context/userContext';
+import router from '@/router';
 
 export function useGameHub(
   roomCode: string,
@@ -71,5 +72,26 @@ export function useGameHub(
     };
   }, [roomCode, username, gameId]);
 
+  useEffect(() => {
+    if (!roomCode || !username) return;
+
+    const hub = getGameHub(roomCode, username, {
+      // ... tus handlers ya existentes
+
+      onForceRejoin: async (rc: string) => {
+        try {
+          // Re-suscribir al grupo de sala (idempotente si ya estás)
+          await hub.subscribeRoom(rc);
+        } catch {/* no-op */ }
+
+        // Refrescar estado y volver a la sala
+        qc.invalidateQueries({ queryKey: ['room', rc] });
+        router.navigate({ to: '/room/$code', params: { code: rc } });
+      },
+    });
+
+    hub.start().then(() => hub.subscribeRoom(roomCode)).catch(console.error);
+  }, [roomCode, username]);
+  
   return {};
 }
