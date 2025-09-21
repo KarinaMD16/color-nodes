@@ -1,6 +1,5 @@
 import { createRoute } from '@tanstack/react-router'
 import { rootRoute } from './__root'
-import Squares from '../components/Squares';
 import { usePostCreateRoom, usePostCreateUser } from '../hooks/userHooks';
 import { useUser } from '../context/userContext';
 import router from '../router';
@@ -31,47 +30,38 @@ function IndexPage() {
     setIsCreatingRoom(true)
     console.log('🚀 Creating user first:', inputUsername)
 
-    // Primero crear el usuario
     createUser(inputUsername, {
       onSuccess: (userData) => {
-        console.log('✅ User created:', userData)
         
-        // Establecer el usuario en el contexto
         const userId = userData.id || userData.userId
         if (userId) {
           setUser(userId, inputUsername)
         }
 
-        // Ahora crear la sala con el usuario
         createRoom(
           inputUsername,
           {
             onSuccess: (roomData) => {
-              console.log('✅ Room created:', roomData)
 
             const roomCode = roomData.code 
             if (!roomCode) {
-              console.error('❌ No room code in response:', roomData)
               toast.error('Error: No room code received')
               setIsCreatingRoom(false)
               return
             }
 
-            // Navegar a la sala
             router.navigate({
               to: '/room/$code',
               params: { code: roomCode }
             })
           },
-          onError: (error) => {
-            console.error('❌ Error creating room:', error)
+          onError: () => {
             toast.error('Error creating room. Please try again.')
             setIsCreatingRoom(false)
           }
         })
       },
-      onError: (error) => {
-        console.error('❌ Error creating user:', error)
+      onError: () => {
         toast.error('Error creating user. Please try again.')
         setIsCreatingRoom(false)
       }
@@ -87,16 +77,16 @@ function IndexPage() {
   }
 
   return (
-    <div className="relative w-full min-h-screen bg-black">
-      <div className="fixed inset-0 w-full h-full bg-black">
-        <Squares
-          speed={0.5}
-          squareSize={40}
-          direction='diagonal'
-          borderColor='#297023'
-          hoverFillColor='#5C5C5C'
-        />
-      </div>
+    <div className="relative w-screen h-screen overflow-hidden">
+      <video
+        className="fixed top-0 left-0 w-full h-full object-cover z-0"
+        src="https://packaged-media.redd.it/ngwgetoqr7y51/pb/m2-res_1080p.mp4?m=DASHPlaylist.mpd&v=1&e=1757149200&s=36fd0cd68fdebb032055efa60d97a8830317d1e7"
+        autoPlay
+        loop
+        muted
+        playsInline
+      />
+      <div className="fixed inset-0 bg-black/50 z-1"></div>
       <Leaderboard />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-2xl mx-auto p-6 text-center font-press-start">

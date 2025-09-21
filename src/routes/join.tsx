@@ -14,12 +14,12 @@ export const joinRoute = createRoute({
 function JoinPage() {
   const [roomCode, setRoomCode] = useState('');
   const { username: ctxName } = useUser();
-  const [name, setName] = useState(ctxName ?? '');     // ← estado local editable
+  const [name, setName] = useState(ctxName ?? ''); 
   const { mutate: postJoinRoom, isPending } = usePostJoinRoom();
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault?.();
-    if (isPending) return; // avoid duplicate submits while loading
+    if (isPending) return; 
     const finalName = name.trim();
     if (!roomCode || !finalName) return;
     postJoinRoom({ username: finalName, roomCode });
@@ -29,7 +29,7 @@ function JoinPage() {
     <div className="relative w-screen h-screen overflow-hidden">
       <video
         className="fixed top-0 left-0 w-full h-full object-cover z-0"
-        src="https://packaged-media.redd.it/ngwgetoqr7y51/pb/m2-res_1080p.mp4?m=DASHPlaylist.mpd&v=1&e=1757149200&s=36fd0cd68fdebb032055efa60d97a8830317d1e7"
+        src="/space-background-video.mp4"
         autoPlay
         loop
         muted
@@ -51,7 +51,7 @@ function JoinPage() {
               id="username_field"
               className="nes-input is-dark w-full text-left"
               value={name}
-              onChange={(e) => setName(e.target.value)}  // ← editable
+              onChange={(e) => setName(e.target.value)} 
               placeholder="Enter your username"
               disabled={isPending}
             />

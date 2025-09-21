@@ -10,6 +10,7 @@ import { Player, AVATAR_SEEDS } from '@/types/PlayerTypes'
 import { User } from '@/models/user'
 import ChatGame from '@/components/game/ChatGame'
 import GameInfo from '@/components/GameInfo'
+import { Loader } from '@/components/Loader'
 
 
 export const route = createRoute({
@@ -17,7 +18,6 @@ export const route = createRoute({
   path: '/room/$code',
   component: WaitingRoomPage,
 })
-
 
 
 function WaitingRoomPage() {
@@ -46,20 +46,21 @@ function WaitingRoomPage() {
 
     return roomData.users.map((user: User, index: number) => ({
       id: user.id,
-      username: user.username, 
-      isHost: index === 0,
+      username: user.username,
+      isHost: user.id === roomData.leaderId, 
       avatar: AVATAR_SEEDS[index % AVATAR_SEEDS.length]
     }))
-  }, [roomData?.users])
+  }, [roomData?.users, roomData?.leaderId])
 
-  const isHost = roomData?.users?.[0]?.username === ctxName || roomData?.users?.[0]?.name === ctxName
-  useEffect(() => {
+  const isHost = roomData?.leaderId === ctxId
+
+ useEffect(() => {
     setCanStartGame(players.length >= 2 && isHost)
   }, [players, isHost])
   
   useEffect(() => {
     if (roomData?.activeGameId && !navigated.current) {
-      localStorage.setItem(`game_${code}`, roomData.activeGameId) // persistir gameId
+      localStorage.setItem(`game_${code}`, roomData.activeGameId) 
       navigated.current = true
       router.navigate({ to: '/room/$code/play', params: { code } })
     }
@@ -113,11 +114,7 @@ function WaitingRoomPage() {
   }
 
   if (isLoading) {
-    // Simple loading animation
-    return (
-      <div className="flex justify-center mb-6">
-        <div className="animate-spin text-4xl">🎮</div>
-      </div>
+    return (<Loader/>
     )
   }
 
@@ -141,7 +138,7 @@ function WaitingRoomPage() {
     <div className="relative w-screen h-screen overflow-hidden">
       <video
         className="fixed top-0 left-0 w-full h-full object-cover z-0"
-        src="/large (1).mp4"
+        src="/trees-background-video.mp4"
         autoPlay
         loop
         muted
@@ -157,7 +154,6 @@ function WaitingRoomPage() {
             <span style={{ color: '#B0C15C' }}>!</span>
           </h1>
 
-          {/* Room Code Section */}
           <div className="nes-container is-dark with-title mb-6">
             <p className="title">Room Code</p>
             <div className="flex items-center justify-center space-x-4">
@@ -182,7 +178,6 @@ function WaitingRoomPage() {
                   {players.map((player, index) => (
                     <div key={`player-${player.id}-${index}`} className="flex items-center justify-between p-2 bg-black/20 rounded">
                       <div className="flex items-center space-x-3">
-                        {/* Avatar */}
                         <img
                           src={`https://api.dicebear.com/9.x/pixel-art/svg?seed=${player.avatar}`}
                           alt={`${player.username} avatar`}
@@ -202,7 +197,6 @@ function WaitingRoomPage() {
                     </div>
                   ))}
                 
-                  {/* Empty slots */}
                   {Array.from({ length: 4 - players.length }).map((_, index) => (
                     <div key={`empty-slot-${index}`} className="flex items-center p-2 bg-black/10 rounded opacity-50">
                       <div className="w-8 h-8 bg-gray-600 rounded mr-3 flex items-center justify-center">
@@ -215,7 +209,6 @@ function WaitingRoomPage() {
               </div>
             </div>
 
-            {/* Game Settings & Actions */}
             <div className="space-y-4">
               <div className="nes-container is-dark with-title">
                 <p className="title">Game Settings</p>
@@ -235,7 +228,6 @@ function WaitingRoomPage() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="space-y-4">
                 {isHost && (
                   <label className="flex items-center space-x-4 cursor-pointer">
@@ -296,7 +288,6 @@ function WaitingRoomPage() {
           <GameInfo />
         </div>
       </div>
-      {/* Chat Component */}
       <div className="z-10">
         <ChatGame roomCode={code} />
       </div>
