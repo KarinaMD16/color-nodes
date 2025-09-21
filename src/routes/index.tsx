@@ -96,7 +96,7 @@ function IndexPage() {
         playsInline
       />
       <div className="fixed inset-0 bg-black/50 z-1"></div>
-      <Leaderboard />
+      <Leaderboard roomCode={''} leaderId={0} />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-2xl mx-auto p-6 text-center font-press-start">
           <h1 className="font-press-start text-3xl md:text-4xl mb-8 whitespace-nowrap">

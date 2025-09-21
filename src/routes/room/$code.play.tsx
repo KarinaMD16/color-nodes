@@ -11,6 +11,7 @@ import { useGetLeaderboard, useGetRoom, usePostLeaveRoom } from '@/hooks/userHoo
 import router from '@/router'
 import { useQueryClient } from '@tanstack/react-query'
 import { User } from '@/models/user'
+import { getGameHub } from '@/services/gameHub'
 
 export const playRoute = createRoute({
   component: PlayPage,
@@ -21,10 +22,18 @@ export const playRoute = createRoute({
 function PlayPage() {
   const { code } = playRoute.useParams()
   const roomCode = code
-  const { id: userId } = useUser()
+  const { id: userId, username } = useUser()
   const ready = !!roomCode && !!userId
 
   const qc = useQueryClient()
+  const handleBackToRoomForAll = async () => {
+    try {
+      const hub = getGameHub(roomCode, username || "")
+      await hub.connection.invoke("RequestRoomReset", roomCode, username)
+    } catch (e) {
+      console.error("Error rejoining room:", e)
+    }
+  }
   const [gameId, setGameId] = useState<string | null>(null)
   const { data: room } = useGetRoom(roomCode)
 
@@ -157,10 +166,8 @@ function PlayPage() {
             Leave
           </button>
           <button
-            onClick={() => {
-              localStorage.removeItem(`game_${roomCode}`)
-              router.navigate({ to: '/room/$code', params: { code: roomCode } })
-            }}
+            onClick={() => handleBackToRoomForAll
+          }
             className="nes-btn is-primary"
           >
             Play again

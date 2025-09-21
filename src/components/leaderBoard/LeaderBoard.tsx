@@ -9,14 +9,7 @@ export default function Leaderboard({ roomCode, leaderId }: { roomCode: string, 
   if (isLoading) return <div className="text-white">Loading leaderboard...</div>
   if (isError) return <div className="text-red-500">Error loading leaderboard</div>
 
-  const handleBackToRoomForAll = async () => {
-    try {
-      const hub = getGameHub(roomCode, username || "")
-      await hub.connection.invoke("RequestRoomReset", roomCode, username)
-    } catch (e) {
-      console.error("Error rejoining room:", e)
-    }
-  }
+
 
   return (
     <div className="absolute top-4 right-6 bg-gray-900 border-2 border-purple-500 rounded-xl shadow-lg p-3 w-60 h-64 z-20 flex flex-col">
@@ -37,16 +30,6 @@ export default function Leaderboard({ roomCode, leaderId }: { roomCode: string, 
           </tbody>
         </table>
       </div>
-
-      {/* Botón solo visible para el host */}
-      {ctxId === leaderId && (
-        <button
-          onClick={handleBackToRoomForAll}
-          className="nes-btn is-primary mt-2 text-xs"
-        >
-          Volver a la sala
-        </button>
-      )}
 
       <style>{`
         div::-webkit-scrollbar { display: none; }
