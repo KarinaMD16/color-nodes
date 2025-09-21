@@ -46,8 +46,8 @@ function WaitingRoomPage() {
 
     return roomData.users.map((user: User, index: number) => ({
       id: user.id,
-      username: user.username, 
-      isHost: index === 0,
+      username: user.username,
+      isHost: user.id === roomData.leaderId, // host real
       avatar: AVATAR_SEEDS[index % AVATAR_SEEDS.length]
     }))
   }, [roomData?.users])
