@@ -8,7 +8,6 @@ import GamePhase from '@/components/game/GamePhase'
 import { useEffect, useState } from 'react'
 import { useGameState } from '@/hooks/gameHooks'
 import { useGetLeaderboard, useGetRoom, usePostLeaveRoom } from '@/hooks/userHooks'
-import router from '@/router'
 import { useQueryClient } from '@tanstack/react-query'
 import { User } from '@/models/user'
 
@@ -28,7 +27,6 @@ function PlayPage() {
   const [gameId, setGameId] = useState<string | null>(null)
   const { data: room } = useGetRoom(roomCode)
 
-  // Guardar o recuperar gameId del localStorage
   useEffect(() => {
     if (!ready) return
     const stored = localStorage.getItem(`game_${roomCode}`)
@@ -42,14 +40,12 @@ function PlayPage() {
 
   const { data: currentGame, error } = useGameState(gameId || undefined)
 
-  // Si hay error, limpiar gameId
   useEffect(() => {
     if (!error) return
     localStorage.removeItem(`game_${roomCode}`)
     setGameId(null)
   }, [error, roomCode])
 
-  // Conectar a hub
   useGameHub(roomCode, gameId ?? undefined, (s) => {
     if (s?.gameId && !gameId) {
       setGameId(s.gameId)
@@ -60,7 +56,6 @@ function PlayPage() {
 
   const validUser = Number.isInteger(userId) && Number(userId) > 0
 
-  // Hooks siempre al inicio
   const leaderboardQuery = useGetLeaderboard(roomCode, false, {
     enabled: currentGame?.status === 'Finished',
   })
@@ -155,15 +150,6 @@ function PlayPage() {
             className="nes-btn is-error"
           >
             Leave
-          </button>
-          <button
-            onClick={() => {
-              localStorage.removeItem(`game_${roomCode}`)
-              router.navigate({ to: '/room/$code', params: { code: roomCode } })
-            }}
-            className="nes-btn is-primary"
-          >
-            Play again
           </button>
         </div>
       </section>
