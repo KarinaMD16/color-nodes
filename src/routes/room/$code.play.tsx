@@ -107,7 +107,6 @@ function PlayPage() {
   if (isInProgress) {
     return <GamePhase game={currentGame} setGame={setGame} />
   }
-
   
   return (
     <PantallaFondo texto="" subtexto="" overlay="none">
