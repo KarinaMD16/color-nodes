@@ -1,4 +1,4 @@
-import { CreateRoom, User, UserRankDto, UserRoomRankDto } from "../models/user";
+import { CreateRoom, User, UserRoomRankDto } from "../models/user";
 import colorNodesAPI from "../api/client";
 
 export const postCreateRoom = async (username: string) => {

@@ -1,5 +1,5 @@
 import { ResultsProps } from "@/types/gameItems/items"
-import CupPixelStraw from "../CupPixelStraw"
+import CupPixelSleeve from "../CupPixelSleeve"
 
 
 function Results({ state, onContinue }: ResultsProps) {
@@ -16,15 +16,11 @@ function Results({ state, onContinue }: ResultsProps) {
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 mb-6 place-items-center">
           {target.map((hex, i) => (
             <div key={`t-${i}`} className="flex flex-col items-center gap-1">
-              <CupPixelStraw
+              <CupPixelSleeve
                 size={cupSize}
-                colors={{
-                  body: hex,
-                  outline: '#111111',
-                  lid: '#ffffff',
-                  rim: '#e5e7eb',
-                  straw: '#ffffff',
-                }}
+                base={
+                  hex
+                }
               />
               <span className="text-[10px] text-black/70 font-bold">#{i + 1}</span>
             </div>
@@ -37,15 +33,9 @@ function Results({ state, onContinue }: ResultsProps) {
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 mb-6 place-items-center">
               {cups.map((hex, i) => (
                 <div key={`c-${i}`} className="flex flex-col items-center gap-1">
-                  <CupPixelStraw
+                  <CupPixelSleeve
                     size={cupSize}
-                    colors={{
-                      body: hex,
-                      outline: '#111111',
-                      lid: '#ffffff',
-                      rim: '#e5e7eb',
-                      straw: '#ffffff',
-                    }}
+                    base={ hex}
                   />
                   <span className="text-[10px] text-black/70 font-bold">#{i + 1}</span>
                 </div>

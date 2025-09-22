@@ -102,7 +102,7 @@ function IndexPage() {
               disabled={isCreatingRoom}
               maxLength={10}
             />
-            <div className="flex items-start justify-start"><span className='text-white text-sm'>{inputUsername.length}/10</span></div>
+            <div className="flex items-start justify-end mt-2"><span className='text-white text-sm'>{inputUsername.length}/10</span></div>
           </div>
 
           <div className="mt-8 flex flex-col items-center space-y-6" tabIndex={-1}>

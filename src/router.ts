@@ -4,7 +4,6 @@ import { indexRoute } from './routes/index'
 import { route as roomCodeRoute } from './routes/room/$code'
 import { joinRoute } from './routes/join'
 import { playRoute } from './routes/room/$code.play'
-import { testRoute } from './routes/test'
 
 // Create the route tree using the imported routes
 const routeTree = rootRoute.addChildren([
@@ -12,7 +11,6 @@ const routeTree = rootRoute.addChildren([
   roomCodeRoute,
   joinRoute,
   playRoute,
-  testRoute
 ])
 
 // Create the router using the route tree
