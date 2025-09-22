@@ -14,10 +14,10 @@ export interface GameStateResponse {
   availableColors: string[];
 }
 
-export interface StartGameRequest {
-     roomCode: string 
+export type StartGameRequest = {
+  roomCode: string;
+  userId: number;
 };
-
 export interface PlaceInitialCupsRequest { 
     playerId: number; 
     cups: string[] 

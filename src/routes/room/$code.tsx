@@ -110,7 +110,7 @@ function WaitingRoomPage() {
     setIsStartingGame(true)
 
     startGame(
-      { roomCode: code },
+      { roomCode: code, userId: ctxId ?? 0},
       {
         onSuccess: (data: any) => {
           if (data?.gameId) {
