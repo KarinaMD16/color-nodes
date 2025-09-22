@@ -5,7 +5,6 @@ import { useSwap } from '@/hooks/useSwap'
 import { SpectatorOverlay } from '@/utils/spec'
 import { motion, LayoutGroup } from 'framer-motion'
 import { Trophy } from 'lucide-react'
-import CupPixelStraw from '../CupPixelStraw'
 import type { GamePhaseProps } from '@/types/gameItems/items'
 import {
   DndContext,
@@ -22,6 +21,8 @@ import { useMemo, useState } from 'react'
 import { AVATAR_SEEDS, Player } from '@/types/PlayerTypes'
 import { PlayersList } from './PlaeyrList'
 import { useGetUsernames, usePostLeaveRoom } from '@/hooks/userHooks'
+import CupPixelSleeve from '../CupPixelSleeve'
+import { useTurnTimer } from '@/hooks/useTurnTimer'
 
 const CUP_SIZE = 110
 
@@ -31,6 +32,12 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
   const { mutate: leaveRoom } = usePostLeaveRoom()
   const { items, isAnimating } = useAnimatedCups(game?.cups ?? [])
   const board = useMemo(() => items.map((it) => ({ id: it.id, hex: it.hex })), [items])
+
+  const { formatted } = useTurnTimer(game?.turnEndsAtUtc, game?.gameId)
+
+  const showTimer =
+    !!game?.turnEndsAtUtc &&
+    !/^9{3,}/.test(game.turnEndsAtUtc)
 
   const { isMyTurn, selectedSlot, handleSlotClick, swapMove } =
     useSwap(game, playerId, setGame, isAnimating)
@@ -100,10 +107,10 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
                     data={{ type: 'cup', from: 'board', slotIndex: idx, hex }}
                     activeId={activeId ?? undefined}
                   >
-                    <CupPixelStraw size={CUP_SIZE} colors={{ body: hex }} />
+                    <CupPixelSleeve size={CUP_SIZE} base={ hex } />
                   </DraggableCup>
                 ) : (
-                  <CupPixelStraw size={CUP_SIZE} colors={{ body: hex }} />
+                  <CupPixelSleeve size={CUP_SIZE} base={ hex } />
                 )}
               </motion.div>
             </button>
@@ -136,15 +143,22 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
             <div className="mb-6 p-4 bg-white/10 rounded-lg space-y-2">
               <div className="flex justify-between items-center">
                 <span className={isMyTurn ? 'text-emerald-400 font-semibold' : 'text-orange-400'}>
-                  {isMyTurn ? 'Your turn' : `${usernames?.find((user: { id: number | null }) => user.id === game.currentPlayerId)?.username}'s turn`}
+                  {isMyTurn
+                    ? 'Your turn'
+                    : `${usernames?.find((u: { id: number | null, username: string }) => u.id === game.currentPlayerId)?.username}'s turn`}
+
                 </span>
-                <span className="text-sm text-white/70">Moves: {game.totalMoves ?? 0}</span>
-              </div>
+                {showTimer && (
+                  <span className="ml-3 text-sm text-white/80">Time left: {formatted}</span>
+                )}</div>
               <div className="flex justify-between items-center text-sm">
+                
                 <span className="text-white/70">
                   Current hits:{' '}
                   <span className="text-emerald-400 font-bold">{game.hits ?? 0}</span>
                 </span>
+                <span className="text-sm text-white/70">Moves: {game.totalMoves ?? 0}</span>
+              
                 {game.hits === 6 && (
                   <span className="text-yellow-400 font-bold inline-flex items-center gap-2">
                     <Trophy size={18} /> You won!
@@ -196,7 +210,7 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
                     >
                       {activeHex ? (
                         <div className="transform rotate-12 scale-110">
-                          <CupPixelStraw size={CUP_SIZE} colors={{ body: activeHex }} />
+                          <CupPixelSleeve size={CUP_SIZE} base={activeHex } />
                         </div>
                       ) : null}
                     </DragOverlay>
@@ -227,16 +241,16 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
               <div className="grid grid-cols-6 max-w-full mx-auto opacity-75">
                 {Array.from({ length: 6 }).map((_, idx) => (
                   <div key={idx} className="w-40 h-40 flex items-center justify-center">
-                    <CupPixelStraw colors={{ body: '#808080' }} />
+                    <CupPixelSleeve size={CUP_SIZE} base={'#cdcdcd' } />
                   </div>
                 ))}
               </div>
             </div>
 
             {(swapMove.isPending || isAnimating) && (
-              <div className="mt-8 p-4 bg-white/5 rounded-lg text-sm text-white/70">
-                <div className="mt-2 text-yellow-400 text-sm">
-                  ⏳ {swapMove.isPending ? 'Processing swap…' : 'Moving cups…'}
+              <div className="mt-0 p-4 bg-white/5 rounded-lg text-sm text-white/70">
+                <div className=" text-yellow-400 text-sm">
+                  {swapMove.isPending ? 'Processing swap…' : 'Moving cups…'}
                 </div>
               </div>
             )}

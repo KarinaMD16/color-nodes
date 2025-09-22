@@ -2,7 +2,6 @@ import bgImage from '../../assets/orig.png'
 import { useInitialPhase } from "@/hooks/useInitialPhase"
 import { nesStateClass } from "@/utils/btnClass"
 import { hasDuplicateColors } from "@/utils/dupeColor"
-import CupPixelStraw from "../CupPixelStraw"
 import {
   useSensors, useSensor, PointerSensor, TouchSensor,
   DndContext, DragOverlay,
@@ -17,6 +16,7 @@ import { motion, LayoutGroup, AnimatePresence } from 'framer-motion'
 import { cupVariants, LAYOUT_SPRING, useBumps } from '@/utils/game/animations'
 import { useUser } from '@/context/userContext'
 import { useGetUsernames } from '@/hooks/userHooks'
+import CupPixelSleeve from '../CupPixelSleeve'
 
 const CUP_SIZE = 100
 
@@ -153,7 +153,7 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                           activeId={activeId ?? undefined}>
                           <div className="inline-flex items-center justify-center"
                             style={{ width: CUP_SIZE, height: CUP_SIZE }}>
-                            <CupPixelStraw size={CUP_SIZE} colors={{ body: hex }} />
+                            <CupPixelSleeve size={CUP_SIZE} base={hex} />
                           </div>
                         </DraggableCup>
                       </div>
@@ -197,7 +197,7 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                                   data={{ type: 'cup', from: 'board', slotIndex: idx }}
                                   activeId={activeId ?? undefined}
                                 >
-                                  <CupPixelStraw size={CUP_SIZE} colors={{ body: hex }} />
+                                  <CupPixelSleeve size={CUP_SIZE} base={ hex } />
                                 </DraggableCup>
                               </motion.div>
                             ) : (
@@ -230,7 +230,7 @@ const SetUpPhase = ({ game, setGame, isMyTurn }: SetUpPhaseProps) => {
                             mass: 0.7,
                           }}
                         >
-                          <CupPixelStraw size={CUP_SIZE} colors={{ body: overlayId }} />
+                          <CupPixelSleeve size={CUP_SIZE} base={  overlayId } />
                         </motion.div>
                       )}
                     </AnimatePresence>

@@ -59,9 +59,7 @@ function JoinPage() {
               disabled={isPending}
               maxLength={10}
             />
-            <div className="flex items-start justify-start">
-              <span className='text-white text-sm'>{name.length}/10</span>
-            </div>
+              <div className="flex items-start justify-end mt-2"><span className='text-white text-sm'>{name.length}/10</span></div>
         </div>
 
         <div className="nes-field">

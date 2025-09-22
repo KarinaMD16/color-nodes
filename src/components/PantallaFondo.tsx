@@ -1,6 +1,6 @@
 import bgImage from '@/assets/orig.png'
 import { PantallaFondoProps } from '@/types/appTypes'
-import CupLoader from './CupPixelStrawAnimated'
+import CupPixelSleeveAnimated from './CupPixelSleeveAnimated'
 
 const PantallaFondo = ({ texto, subtexto, children, overlay = 'dark' }: PantallaFondoProps) => {
   return (
@@ -19,16 +19,15 @@ const PantallaFondo = ({ texto, subtexto, children, overlay = 'dark' }: Pantalla
               <div className="mt-4">{children}</div>
             ) : (
               <div className="flex justify-center">
-                <CupLoader
-                  size={200}
-                  speedSec={1.0}
-                  cupColor="#22d3ee"
-                  lidColor="#eab308"
-                  strawColor="#ef4444"
-                  rimColor="#0f172a"
-                  bg="transparent"
-                  label="Cargando Color Nodes…"
-                />
+                    <CupPixelSleeveAnimated
+                      size={160}
+                      base="#b87333"
+                      speedSec={1.1}
+                      angleDeg={14}
+                      liftPx={1.6}
+                      strawAngleDeg={7}
+                      strawLiftPx={0.6}
+                    />
               </div>
             )}
           </div>

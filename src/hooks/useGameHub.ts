@@ -1,9 +1,11 @@
-import { useEffect, } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import type { GameStateResponse } from '@/models/game';
-import { getGameHub } from '@/services/gameHub';
-import { useUser } from '@/context/userContext';
-import type { Handlers } from '@/types/hubTypes';
+// useGameHub.ts
+import { useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import type { GameStateResponse } from '@/models/game'
+import { getGameHub } from '@/services/gameHub'
+import { useUser } from '@/context/userContext'
+import type { Handlers } from '@/types/hubTypes'
+import { postTick } from '@/services/gameService' // 👈 importa el servicio
 
 type UpdateOrHandlers =
   | ((s: GameStateResponse) => void)
@@ -30,17 +32,23 @@ export function useGameHub(roomCode: string, gameId?: string, onUpdateOrHandlers
         handlers.onStateUpdated?.(s);
         qc.invalidateQueries({ queryKey: ['room', roomCode] });
       },
-      onTurnChanged: ({ currentPlayerId }) => {
+
+      // 🔧 CAMBIO: en vez de parchar solo currentPlayerId,
+      // pedimos al backend el estado fresco (que incluye turnEndsAtUtc reseteado)
+      onTurnChanged: async ({ currentPlayerId }) => {
+        handlers.onTurnChanged?.({ currentPlayerId });
+
         if (!gameId) return;
-        const prev = qc.getQueryData<GameStateResponse>(['game', gameId]);
-        if (prev) {
-          const patched = { ...prev, currentPlayerId };
-          qc.setQueryData(['game', gameId], patched);
-          handlers.onTurnChanged?.({ currentPlayerId });
+        try {
+          const updated = await postTick(gameId); 
+          qc.setQueryData(['game', gameId], updated); // refresca turnEndsAtUtc
+        } catch {
         }
       },
+
       onHitFeedback: (m) => handlers.onHitFeedback?.(m),
       onFinished: (s) => handlers.onFinished?.(s),
+
       onConn: (state, info) => {
         const u = (info?.user ?? info) as { id?: number; username?: string } | undefined;
         if (u?.id && u?.username) {
@@ -48,16 +56,15 @@ export function useGameHub(roomCode: string, gameId?: string, onUpdateOrHandlers
         }
         handlers.onConn?.(state, info);
       },
+
       onPlayerJoined: (u) => { qc.invalidateQueries({ queryKey: ['room', roomCode] }); handlers.onPlayerJoined?.(u); },
       onPlayerLeft: (u) => { qc.invalidateQueries({ queryKey: ['room', roomCode] }); handlers.onPlayerLeft?.(u); },
       onChatMessage: (msg) => { qc.invalidateQueries({ queryKey: ['chat', roomCode] }); handlers.onChatMessage?.(msg); },
     });
 
     hub.start().catch(console.error);
-
-    // Limpia handlers al desmontar / cambiar deps
     return () => { unregister?.(); };
-  }, [roomCode, username, gameId]); // deps estables
+  }, [roomCode, username, gameId]);
 
   useEffect(() => {
     if (!roomCode || !username || !gameId) return;

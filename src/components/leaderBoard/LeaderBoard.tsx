@@ -1,5 +1,5 @@
 import { useGetUsersOrderedByScore } from "@/hooks/userHooks"
-import CupLoader from "../CupPixelStrawAnimated"
+import CupLoader from "../CupPixelSleeveAnimated"
 
 export default function Leaderboard() {
   const { data: users, isLoading, isError } = useGetUsersOrderedByScore()
