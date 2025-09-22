@@ -5,7 +5,7 @@ import { IoSend, IoChatbubbleEllipses, IoCloseSharp } from "react-icons/io5";
 import { ChatGameProps, ChatMessage } from '@/types/ChatTypes';
 
 export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<ChatGameProps>) {
-  const { username } = useUser()
+  const { id: userId, username } = useUser()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [isExpanded, setIsExpanded] = useState(!isCollapsed)
@@ -16,25 +16,30 @@ export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<Cha
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  function handleIncomingChatMessage(msg: ChatMessage, setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>) {
+    if (msg?.id && msg?.username && msg?.message) {
+      setMessages(prev => {
+        const exists = prev.some(existingMsg => existingMsg.id === msg.id);
+        if (exists) return prev;
+        return [...prev, msg];
+      });
+    }
+  }
+
   useEffect(() => {
-    if (!roomCode || !username) return;
+
+    if (!roomCode || !username || !userId) return;
 
     const chatHandler = (msg: ChatMessage) => {
-      if (msg?.id && msg?.username && msg?.message) {
-        setMessages(prev => {
-          const exists = prev.some(existingMsg => existingMsg.id === msg.id);
-          if (exists) return prev;
-          return [...prev, msg];
-        });
-      }
+      handleIncomingChatMessage(msg, setMessages);
     };
 
     const hub = getGameHub(roomCode, username);
     
     const cleanup = hub.registerHandlers({
       onChatMessage: chatHandler,
-      onPlayerJoined: (username) => {},
-      onPlayerLeft: (username) => {}
+      onPlayerJoined: (_username) => {},
+      onPlayerLeft: (_username) => {}
     });
 
     hub.start().catch(console.error);
@@ -42,10 +47,10 @@ export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<Cha
     return () => {
       cleanup();
     };
-  }, [roomCode, username]);
+  }, [roomCode, username, userId]); 
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !roomCode || !username) return;
+    if (!newMessage.trim() || !roomCode || !username || !userId) return;
 
     try {
       const hub = getGameHub(roomCode, username)
@@ -72,6 +77,16 @@ export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<Cha
       hour: '2-digit', 
       minute: '2-digit' 
     });
+  }
+
+  if (!userId) {
+    return (
+      <div className="fixed bottom-4 right-4 z-50">
+        <div className="bg-gray-600 text-white px-4 py-2 rounded-lg shadow-lg">
+          <span className="text-sm">Chat disabled</span>
+        </div>
+      </div>
+    )
   }
 
   if (!isExpanded) {
@@ -108,7 +123,7 @@ export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<Cha
         </button>
       </div>
 
- <div className="flex-1 overflow-y-auto p-3 space-y-2">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {messages.length === 0 ? (
           <div className="text-center text-white/50 text-sm py-8">
             💭 No messages yet. Start the conversation!
@@ -127,7 +142,7 @@ export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<Cha
             >
               {msg.isSystem ? (
                 <div className="bg-yellow-400/10 px-2 py-1 rounded text-xs border border-yellow-400/20">
-                {msg.message}
+                  {msg.message}
                 </div>
               ) : (
                 <div
@@ -137,7 +152,6 @@ export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<Cha
                       : 'bg-white/10 text-white border border-white/10'
                   }`}
                 >
-
                   <div className="text-xs mb-1 flex">
                     <span className={`font-bold ${
                       msg.username === username 
@@ -169,14 +183,14 @@ export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<Cha
             onKeyDown={handleKeyPress}
             placeholder="Type a message..."
             maxLength={50}
-            disabled={!username || !roomCode}
+            disabled={!username || !userId}
             className="flex-1 bg-white/10 text-white placeholder-white/50 px-3 py-2 rounded-lg border border-white/20 focus:border-purple-400 focus:outline-none text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           />
           <button
             onClick={sendMessage}
-            disabled={!newMessage.trim() || !username || !roomCode}
+            disabled={!newMessage.trim() || !username || !userId}
             className={`px-4 py-2 rounded-lg font-bold text-sm transition-all duration-200 min-w-[48px] ${
-              newMessage.trim() && username && roomCode
+              newMessage.trim() && username && roomCode && userId
                 ? 'bg-purple-600 hover:bg-purple-500 text-white'
                 : 'bg-gray-600 text-gray-400 cursor-not-allowed'
             }`}
@@ -187,7 +201,7 @@ export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<Cha
         </div>
         <div className="text-xs text-white/50 mt-1 flex justify-between">
           <span>{newMessage.length}/50</span>
-          {(!username || !roomCode) && (
+          {!userId && (
             <span className="text-red-400">• Not connected</span>
           )}
         </div>
