@@ -26,10 +26,8 @@ function IndexPage() {
       toast.warning('Please enter a username')
       return
     }
-
     setIsCreatingRoom(true)
-    console.log('🚀 Creating user first:', inputUsername)
-
+    
     createUser(inputUsername, {
       onSuccess: (userData) => {
         
@@ -106,7 +104,9 @@ function IndexPage() {
               value={inputUsername}
               onChange={(e) => setInputUsername(e.target.value)}
               disabled={isCreatingRoom}
+              maxLength={10}
             />
+            <div className="flex items-start justify-start"><span className='text-white text-sm'>{inputUsername.length}/10</span></div>
           </div>
 
           <div className="mt-8 flex flex-col items-center space-y-6" tabIndex={-1}>

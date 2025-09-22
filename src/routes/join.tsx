@@ -20,8 +20,9 @@ function JoinPage() {
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault?.();
     if (isPending) return; 
+    if (!roomCode || !name.trim()) return;
+    
     const finalName = name.trim();
-    if (!roomCode || !finalName) return;
     postJoinRoom({ username: finalName, roomCode });
   };
 
@@ -51,10 +52,14 @@ function JoinPage() {
               id="username_field"
               className="nes-input is-dark w-full text-left"
               value={name}
-              onChange={(e) => setName(e.target.value)} 
+              onChange={(e) => setName(e.target.value)}
               placeholder="Enter your username"
               disabled={isPending}
+              maxLength={10}
             />
+            <div className="flex items-start justify-start">
+              <span className='text-white text-sm'>{name.length}/10</span>
+            </div>
         </div>
 
         <div className="nes-field">
@@ -81,9 +86,9 @@ function JoinPage() {
               name="room-action"
               tabIndex={0}
               onClick={() => handleSubmit()}
-              disabled={isPending}
+              disabled={isPending || !name.trim()}
             />
-            <span className={`font-press-start text-white text-sm ${isPending ? 'opacity-50' : ''}`}>
+            <span className={`font-press-start text-white text-sm ${isPending || !name.trim() ? 'opacity-50' : ''}`}>
                 {isPending ? 'Joining...' : 'Join'}
               </span>
           </label>
