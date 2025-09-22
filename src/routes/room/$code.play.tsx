@@ -150,7 +150,7 @@ function PlayPage() {
                   <tr key={u.rank} className="odd:bg-black/5">
                     <td className="px-3 py-2">#{u.rank}</td>
                     <td className="px-3 py-2">{u.username}</td>
-                    <td className="px-3 py-2">{u.score}</td>
+                    <td className="px-3 py-2">{u.room_Score}</td>
                   </tr>
                 ))
               ) : (

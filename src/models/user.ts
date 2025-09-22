@@ -23,3 +23,9 @@ export interface UserRankDto {
   username: string;
   score: number;
 }
+
+export interface UserRoomRankDto {
+  rank: number;
+  username: string;
+  room_Score: number;
+}

@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getLeaderboard, getRoom, getUserById, getUsersOrderedByScore, postCreateRoom, postCreateUser, postJoinRoom, postLeaveRoom } from "../services/userService";
-import { User, UserRankDto } from "@/models/user";
+import { User, UserRankDto, UserRoomRankDto } from "@/models/user";
 import { useNavigate } from "@tanstack/react-router";
 import { useUser } from "@/context/userContext";
 import { getUsernames } from "../services/userService";
@@ -125,7 +125,7 @@ export function useGetLeaderboard(
   enabledDefault = false,
   options?: { enabled?: boolean }
 ) {
-  return useQuery<UserRankDto[], Error>({
+  return useQuery<UserRoomRankDto[], Error>({
     queryKey: ["leaderboard", roomCode],
     queryFn: () => getLeaderboard(roomCode),
     enabled: options?.enabled ?? enabledDefault,
