@@ -10,6 +10,8 @@ import { useGameState } from '@/hooks/gameHooks'
 import { useGetLeaderboard, useGetRoom, usePostLeaveRoom } from '@/hooks/userHooks'
 import { useQueryClient } from '@tanstack/react-query'
 import { User } from '@/models/user'
+import Results from '@/components/game/Results'
+import PlayAgainButton from '@/components/game/PlayAgainButton'
 
 export const playRoute = createRoute({
   component: PlayPage,
@@ -21,24 +23,26 @@ function PlayPage() {
   const { code } = playRoute.useParams()
   const roomCode = code
   const { id: userId } = useUser()
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [finalState, setFinalState] = useState<any | null>(null);
   const ready = !!roomCode && !!userId
 
   const qc = useQueryClient()
   const [gameId, setGameId] = useState<string | null>(null)
   const { data: room } = useGetRoom(roomCode)
+  const { data: currentGame, error } = useGameState(gameId || undefined)
 
   useEffect(() => {
-    if (!ready) return
-    const stored = localStorage.getItem(`game_${roomCode}`)
-    if (stored) {
-      setGameId(stored)
-    } else if (room?.activeGameId) {
-      setGameId(room.activeGameId)
-      localStorage.setItem(`game_${roomCode}`, room.activeGameId)
-    }
-  }, [ready, roomCode, room?.activeGameId])
+    if (!ready) return;
+    const stored = localStorage.getItem(`game_${roomCode}`);
 
-  const { data: currentGame, error } = useGameState(gameId || undefined)
+    if (room?.activeGameId && room.activeGameId !== stored) {
+      setGameId(room.activeGameId);
+      localStorage.setItem(`game_${roomCode}`, room.activeGameId);
+    } else if (stored && stored !== gameId) {
+      setGameId(stored);
+    }
+  }, [ready, roomCode, room?.activeGameId]);
 
   useEffect(() => {
     if (!error) return
@@ -46,13 +50,21 @@ function PlayPage() {
     setGameId(null)
   }, [error, roomCode])
 
-  useGameHub(roomCode, gameId ?? undefined, (s) => {
-    if (s?.gameId && !gameId) {
-      setGameId(s.gameId)
-      localStorage.setItem(`game_${roomCode}`, s.gameId)
+  useGameHub(roomCode, gameId ?? undefined, {
+    onStateUpdated: (s) => {
+      if (s?.gameId && s.gameId !== gameId) {
+        setGameId(s.gameId);
+        localStorage.setItem(`game_${roomCode}`, s.gameId);
+      }
+      if (s?.gameId) {
+        qc.setQueryData(['game', s.gameId], s);
+      }
+    },
+    onFinished: (finalState) => {
+      setFinalState(finalState);
+      setShowResultModal(true);
     }
-    if (s?.gameId) qc.setQueryData(['game', s.gameId], s)
-  })
+  });
 
   const validUser = Number.isInteger(userId) && Number(userId) > 0
 
@@ -61,7 +73,7 @@ function PlayPage() {
   })
   const leaveMutation = usePostLeaveRoom()
 
-  if (!ready || !validUser) return <PantallaFondo texto="Obteniendo usuario..." />
+  if (!ready || !validUser) return <PantallaFondo texto="Loading users..." />
   if (!currentGame) return <PantallaFondo texto="Waiting for game to start..." />
 
   const isMyTurn =
@@ -96,8 +108,15 @@ function PlayPage() {
     return <GamePhase game={currentGame} setGame={setGame} />
   }
 
+  
   return (
     <PantallaFondo texto="" subtexto="" overlay="none">
+      {showResultModal && finalState && (
+        <Results
+          state={finalState}
+          onContinue={() => setShowResultModal(false)}
+        />
+      )}
       <section
         className="nes-container mx-auto max-w-3xl p-6
                  !bg-white !border-4 !border-black
@@ -151,6 +170,8 @@ function PlayPage() {
           >
             Leave
           </button>
+
+          <PlayAgainButton code={roomCode} gameId={currentGame?.gameId} />
         </div>
       </section>
     </PantallaFondo>

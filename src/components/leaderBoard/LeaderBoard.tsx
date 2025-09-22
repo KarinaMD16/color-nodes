@@ -1,11 +1,11 @@
 import { useGetUsersOrderedByScore } from "@/hooks/userHooks"
-import CupLoader from "../CupLoader"
+import CupLoader from "../CupPixelStrawAnimated"
 
 export default function Leaderboard() {
   const { data: users, isLoading, isError } = useGetUsersOrderedByScore()
 
   if (isLoading) {
-    return  <CupLoader/>
+    return <CupLoader />
   }
   if (isError) return <div className="text-red-500">Error loading leaderboard</div>
 
@@ -34,9 +34,8 @@ export default function Leaderboard() {
             {users?.map((u, i) => (
               <tr
                 key={u.id}
-                className={`${
-                  i % 2 === 0 ? "bg-gray-800" : "bg-gray-700"
-                } hover:bg-purple-700`}
+                className={`${i % 2 === 0 ? "bg-gray-800" : "bg-gray-700"
+                  } hover:bg-purple-700`}
               >
                 <td className="px-1 py-1">{u.username}</td>
                 <td className="px-1 py-1 text-right">{u.score}</td>

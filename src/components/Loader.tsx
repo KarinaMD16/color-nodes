@@ -1,18 +1,25 @@
-import CupLoader from "./CupLoader";
+import CupPixelStrawAnimated from "./CupPixelStrawAnimated";
+
 
 export function Loader() {
   return (
-    <div className="grid place-items-center h-screen bg-slate-900">
-      <CupLoader
-        size={200}
-        speedSec={1.0}
-        cupColor="#22d3ee"
-        lidColor="#eab308"
-        strawColor="#ef4444"
-        rimColor="#0f172a"
-        bg="transparent"
-        label="Cargando Color Nodes…"
+    <div className="flex  items-center justify-center flex-col h-screen bg-slate-700">
+      <CupPixelStrawAnimated
+        size={128}
+        speedSec={1.6}       // más bajo = más rápido
+        colors={{
+          body: "#ef4444",
+          outline: "#111",
+          lid: "#fff",
+          rim: "#e5e7eb",
+          straw: "#fff",
+        }}
       />
+      <h1>
+        <span style={{ color: '#7F5CC1' }}>Color</span>{' '}
+        <span style={{ color: '#C15CAE' }}>Nodes</span>
+        <span style={{ color: '#B0C15C' }}>!</span>
+      </h1>
     </div>
   );
 }

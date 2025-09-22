@@ -1,8 +1,7 @@
-import { createRoute } from '@tanstack/react-router'
+import { createRoute, useNavigate } from '@tanstack/react-router'
 import { rootRoute } from './__root'
 import { usePostCreateRoom, usePostCreateUser } from '../hooks/userHooks';
 import { useUser } from '../context/userContext';
-import router from '../router';
 import { useState } from 'react';
 import Leaderboard from '@/components/leaderBoard/LeaderBoard';
 import GameInfo from '@/components/GameInfo';
@@ -21,6 +20,7 @@ function IndexPage() {
   const [inputUsername, setInputUsername] = useState(username || '')
   const [isCreatingRoom, setIsCreatingRoom] = useState(false)
 
+  const navigate = useNavigate()
   const handleCreateRoom = () => {
     if (!inputUsername.trim()) {
       toast.warning('Please enter a username')
@@ -48,7 +48,7 @@ function IndexPage() {
               return
             }
 
-            router.navigate({
+            navigate({
               to: '/room/$code',
               params: { code: roomCode }
             })
@@ -67,11 +67,7 @@ function IndexPage() {
   }
 
   const handleJoinRoom = () => {
-    if (!inputUsername.trim()) {
-      toast.warning('Please enter a username')
-      return
-    }
-    router.navigate({ to: '/join' })
+    navigate({ to: '/join' })
   }
 
   return (
@@ -95,10 +91,10 @@ function IndexPage() {
           </h1>
           
           <div className="nes-field mt-8 mb-10">
-            <label htmlFor="name_field" className="text-white text-left">Username</label>
+            <label htmlFor="username_field" className="text-white text-left">Username</label>
             <input
               type="text"
-              id="name_field"
+              id="username_field"
               className="nes-input is-dark w-full"
               placeholder="Enter your username"
               value={inputUsername}

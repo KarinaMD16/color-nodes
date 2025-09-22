@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { createRoute } from '@tanstack/react-router'
+import { createRoute, useNavigate } from '@tanstack/react-router'
 import { rootRoute } from '../__root'
 import { useUser } from '../../context/userContext'
 import { useGetRoom, usePostLeaveRoom } from '../../hooks/userHooks'
@@ -11,6 +11,8 @@ import { User } from '@/models/user'
 import ChatGame from '@/components/game/ChatGame'
 import GameInfo from '@/components/GameInfo'
 import { Loader } from '@/components/Loader'
+import {  useQueryClient } from '@tanstack/react-query'
+import { clearGameHubInstance, getGameHub } from '@/services/gameHub'
 
 
 export const route = createRoute({
@@ -21,6 +23,7 @@ export const route = createRoute({
 
 
 function WaitingRoomPage() {
+  const lastNavGameIdRef = useRef<string | null>(null);
   const { code } = route.useParams()
   const { id: ctxId, username: ctxName, setUser } = useUser();
   const [copied, setCopied] = useState(false)
@@ -30,16 +33,37 @@ function WaitingRoomPage() {
   const { data: roomData, isLoading } = useGetRoom(code)
   const { mutate: startGame } = useStartGame()
   const navigated = useRef(false)
+  const navigate = useNavigate()
+  const qc = useQueryClient();
 
-  useGameHub(code, undefined, (s) => {
-    if (s?.gameId) {
-      localStorage.setItem(`game_${code}`, s.gameId)
-      if (!navigated.current) {
-        navigated.current = true
-        router.navigate({ to: '/room/$code/play', params: { code } })
+  useGameHub(code, undefined, {
+    onStateUpdated: (s) => {
+      console.log('[WaitingRoom] StateUpdated', s?.gameId);
+
+      if (s?.gameId && s.gameId !== lastNavGameIdRef.current) {
+        localStorage.setItem(`game_${code}`, s.gameId);
+        lastNavGameIdRef.current = s.gameId; 
+        navigate({ to: '/room/$code/play', params: { code } });
       }
+
+      qc.invalidateQueries({ queryKey: ['room', code] });
     }
-  })
+  });
+
+  useEffect(() => {
+    lastNavGameIdRef.current = null;
+  }, [code]);
+
+  useEffect(() => {
+    return () => {
+      if (ctxName) {
+        const hub = getGameHub(code, ctxName);
+        hub.stop?.().catch(() => { });
+        clearGameHubInstance(code, ctxName);
+      }
+    };
+  }, [code, ctxName]);
+
 
   const players: Player[] = useMemo(() => {
     if (!roomData?.users) return []
@@ -62,7 +86,7 @@ function WaitingRoomPage() {
     if (roomData?.activeGameId && !navigated.current) {
       localStorage.setItem(`game_${code}`, roomData.activeGameId) 
       navigated.current = true
-      router.navigate({ to: '/room/$code/play', params: { code } })
+      navigate({ to: '/room/$code/play', params: { code } })
     }
   }, [roomData?.activeGameId, code])
 
@@ -82,28 +106,26 @@ function WaitingRoomPage() {
   }, [ctxId, ctxName, roomData?.users, setUser]);
 
   const handleStartGame = () => {
-    if (canStartGame && !isStartingGame) {
-      setIsStartingGame(true)
-      
-      startGame(
-        { roomCode: code },
-        {
-          onSuccess: (data: any) => {
-            if (data?.gameId) {
-              localStorage.setItem(`game_${code}`, data.gameId)
-            }
-            router.navigate({ 
-              to: '/room/$code/play', 
-              params: { code } 
-            })
-          },
-          onError: (error) => {
-            console.error('Error starting game:', error)
-            setIsStartingGame(false)
+    if (!canStartGame || isStartingGame) return
+    setIsStartingGame(true)
+
+    startGame(
+      { roomCode: code },
+      {
+        onSuccess: (data: any) => {
+          if (data?.gameId) {
+            localStorage.setItem(`game_${code}`, data.gameId)
           }
+          qc.invalidateQueries({ queryKey: ['room', code] })
+
+          navigate({ to: '/room/$code/play', params: { code } })
+        },
+        onError: (error) => {
+          console.error('Error starting game:', error)
+          setIsStartingGame(false)
         }
-      )
-    }
+      }
+    )
   }
 
   const handleLeaveRoom = () => {
