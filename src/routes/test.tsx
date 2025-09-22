@@ -1,6 +1,5 @@
 import { createRoute } from "@tanstack/react-router";
 import { rootRoute } from "./__root";
-import { Loader } from "@/components/Loader";
 import CupPixelStraw from "@/components/CupPixelStraw";
 import CupPixelSleeve from "@/components/CupPixelSleeve";
 
@@ -15,12 +14,12 @@ function testPage() {
 
             <CupPixelStraw />
             <div className="flex justify-center items-center">
-                <CupPixelSleeve base={"EF476F"} />
-                <CupPixelSleeve base={"7067CF"} />
-                <CupPixelSleeve base={"1B9AAA"} />
-                <CupPixelSleeve base={"06D6A0"} />
-                <CupPixelSleeve base={"F8FFE5"} />
-                <CupPixelSleeve base={"FFC43D"} />
+                <CupPixelSleeve base={"EC5766"} />
+                <CupPixelSleeve base={"E3B505"} />
+                <CupPixelSleeve base={"80CED7"} />
+                <CupPixelSleeve base={"7D53DE"} />
+                <CupPixelSleeve base={"FF2DD1"} />
+                <CupPixelSleeve base={"FFBE86"} />
             </div>
         </div>
     )
