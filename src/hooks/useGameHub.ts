@@ -54,13 +54,27 @@ export function useGameHub(roomCode: string, gameId?: string, onUpdateOrHandlers
         handlers.onConn?.(state, info);
       },
 
-      onPlayerJoined: (u) => { qc.invalidateQueries({ queryKey: ['room', roomCode] }); handlers.onPlayerJoined?.(u); },
-      onPlayerLeft: (u) => { qc.invalidateQueries({ queryKey: ['room', roomCode] }); handlers.onPlayerLeft?.(u); },
-      onChatMessage: (msg) => { qc.invalidateQueries({ queryKey: ['chat', roomCode] }); handlers.onChatMessage?.(msg); },
+      onPlayerJoined: (u) => { 
+        qc.invalidateQueries({ queryKey: ['room', roomCode]}); 
+        handlers.onPlayerJoined?.(u); 
+      },
+      onPlayerLeft: (u) => { 
+        qc.invalidateQueries({ 
+            queryKey: ['room', roomCode] 
+        }); 
+        handlers.onPlayerLeft?.(u); 
+      },
+      onChatMessage: (msg) => { 
+        qc.invalidateQueries({ queryKey: ['chat', roomCode] }); 
+        handlers.onChatMessage?.(msg); 
+      },
     });
 
     hub.start().catch(console.error);
-    return () => { unregister?.(); };
+    
+    return () => { 
+      unregister?.(); 
+    };
   }, [roomCode, username, gameId]);
 
   useEffect(() => {
