@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getLeaderboard, getRoom, getUserById, getUsersOrderedByScore, postCreateRoom, postCreateUser, postJoinRoom, postLeaveRoom } from "../services/userService";
-import { User, UserRankDto, UserRoomRankDto } from "@/models/user";
+import { User, UserRoomRankDto } from "@/models/user";
 import { useNavigate } from "@tanstack/react-router";
 import { useUser } from "@/context/userContext";
 import { getUsernames } from "../services/userService";

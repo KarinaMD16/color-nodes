@@ -33,15 +33,13 @@ export function useGameHub(roomCode: string, gameId?: string, onUpdateOrHandlers
         qc.invalidateQueries({ queryKey: ['room', roomCode] });
       },
 
-      // 🔧 CAMBIO: en vez de parchar solo currentPlayerId,
-      // pedimos al backend el estado fresco (que incluye turnEndsAtUtc reseteado)
       onTurnChanged: async ({ currentPlayerId }) => {
         handlers.onTurnChanged?.({ currentPlayerId });
 
         if (!gameId) return;
         try {
           const updated = await postTick(gameId); 
-          qc.setQueryData(['game', gameId], updated); // refresca turnEndsAtUtc
+          qc.setQueryData(['game', gameId], updated); 
         } catch {
         }
       },

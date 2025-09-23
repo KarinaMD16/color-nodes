@@ -126,7 +126,7 @@ export default function ChatGame({ roomCode, isCollapsed = false }: Readonly<Cha
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {messages.length === 0 ? (
           <div className="text-center text-white/50 text-sm py-8">
-            💭 No messages yet. Start the conversation!
+            No messages yet. Start the conversation!
           </div>
         ) : (
           messages.map((msg, index) => (

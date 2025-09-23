@@ -1,5 +1,3 @@
-import React from "react";
-
 /**
  * Vaso pixel-art con tapa y manga (estilo café) + animación de tapa.
  * Animación por CSS keyframes (sin SMIL). La pajilla acompaña suavemente.
@@ -7,7 +5,7 @@ import React from "react";
  */
 type Props = {
   size?: number;         // ancho en px (alto ≈ size * 1.25)
-  base?: string;         // color único (p.ej. "#c0843d")
+  base?: string;
   outline?: string;      // contorno
   className?: string;
 
@@ -30,7 +28,6 @@ export default function CupPixelSleeveAnimated({
   strawAngleDeg = 6,
   strawLiftPx = 0.4,
 }: Props) {
-  // ---------- Helpers de color ----------
   const clamp = (n: number, a = 0, b = 1) => Math.min(b, Math.max(a, n));
   const hexToRgb = (hex: string) => {
     const m = hex.replace('#', '').match(/^([a-f\d]{3}|[a-f\d]{6})$/i);
@@ -74,11 +71,7 @@ export default function CupPixelSleeveAnimated({
   const darken = (hex: string, amt = 0.15) => {
     const { r, g, b } = hexToRgb(hex); const { h, s, l } = rgbToHsl(r, g, b); return hslToHex(h, s, clamp(l - amt));
   };
-  const desaturate = (hex: string, amt = 0.2) => {
-    const { r, g, b } = hexToRgb(hex); const { h, s, l } = rgbToHsl(r, g, b); return hslToHex(h, clamp(s - amt), l);
-  };
 
-  // Derivados a partir de "base"
   const bodyMain = base;
   const bodyLight1 = lighten(base, 0.18);
   const bodyLight2 = lighten(base, 0.32);
@@ -86,11 +79,9 @@ export default function CupPixelSleeveAnimated({
   const bodyDark2 = darken(base, 0.32);
 
 
-  // Tapa (grises)
   const lidLight = lighten("#cfd7e2", 0.10);
   const lidDark = darken("#cfd7e2", 0.15);
 
-  // Pajilla derivada del base
   const strawLight = tweak(base, 0.45, -0.50);
 
   const dur = `${speedSec}s`;
@@ -105,9 +96,8 @@ export default function CupPixelSleeveAnimated({
       className={className}
       aria-label="pixel-cup-sleeve (animated lid)"
     >
-      {/* CSS animaciones */}
       <style>{`
-        /* Tapa: pivot en el lado izquierdo-centro del grupo */
+        /* Tapa */
         .lid-anim {
           transform-box: fill-box;
           transform-origin: left center;
@@ -119,7 +109,7 @@ export default function CupPixelSleeveAnimated({
           100% { transform: rotate(0deg) translateY(0px); }
         }
 
-        /* Pajilla: pivot cerca del punto de entrada (x≈16,y≈5) */
+        /* Pajilla */
         .straw-anim {
           transform-box: view-box;
           transform-origin: 16px 5px;
@@ -145,12 +135,9 @@ export default function CupPixelSleeveAnimated({
 
       {/* ===== TAPA (grupo animado) ===== */}
       <g className="lid-anim">
-        {/* cúpula */}
         <rect x="5" y="5" width="22" height="4" fill={lidDark} />
         <rect x="7" y="5" width="16" height="3" fill={lidLight} />
-        {/* aro / visera */}
         <rect x="3" y="9" width="26" height="3" fill={lidLight} />
-        {/* contornos tapa */}
         <rect x="5" y="5" width="22" height="4" fill="none" stroke={outline} strokeWidth={1} />
         <rect x="3" y="9" width="26" height="3" fill="none" stroke={outline} strokeWidth={1} />
       </g>
@@ -160,13 +147,10 @@ export default function CupPixelSleeveAnimated({
       <rect x="25" y="12" width="2" height="24" fill={outline} />
       <rect x="7" y="36" width="18" height="2" fill={outline} />
       <rect x="7" y="12" width="18" height="1" fill={outline} />
-
-      {/* volumen del cuerpo */}
       <rect x="7" y="13" width="18" height="23" fill={bodyMain} />
       <rect x="8" y="13" width="6" height="23" fill={bodyDark2} />
       <rect x="14" y="13" width="6" height="23" fill={bodyDark1} />
       <rect x="20" y="13" width="5" height="23" fill={bodyLight1} />
-      {/* reflejo */}
       <rect x="21" y="14" width="2" height="6" fill={bodyLight2} />
 
       {/* BASE */}

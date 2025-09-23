@@ -12,7 +12,7 @@ export default function Leaderboard() {
   return (
     <div className="absolute top-4 right-6 bg-gray-900 border-2 border-purple-500 rounded-xl shadow-lg p-3 w-60 h-64 z-20 flex flex-col">
       <h2 className="text-yellow-400 font-press-start text-xs mb-2 text-center flex-shrink-0">
-        🏆 Leaderboard
+        Leaderboard
       </h2>
       <div className="flex-shrink-0">
         <table className="w-full text-white text-[10px]">

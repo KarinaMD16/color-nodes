@@ -1,5 +1,3 @@
-import React from "react";
-
 type Props = {
   size?: number;      // tamaño en px
   face?: string;      // color de la cara
@@ -56,11 +54,10 @@ export default function PixelThinking({
       <rect x="6" y="6" width="1" height="12" fill={ink}/>
       <rect x="17" y="6" width="1" height="12" fill={ink}/>
 
-      {/* brillo */}
       <rect x="7" y="7" width="2" height="1" fill="#fff" opacity=".8"/>
       <rect x="9" y="7" width="1" height="1" fill="#fff" opacity=".6"/>
 
-      {/* sombra lateral */}
+      {/* sombra */}
       <rect x="16" y="8" width="1" height="8" fill={shade} opacity=".6"/>
 
       {/* ojos */}

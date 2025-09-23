@@ -14,7 +14,6 @@ export function useTurnTimer(turnEndsAtUtc?: string, gameId?: string) {
     const endMs = useRef<number>(0)
     const pollInterval = useRef<number | null>(null)
 
-    // recalcular SIEMPRE que cambie turnEndsAtUtc (reactivo)
     useEffect(() => {
         if (!turnEndsAtUtc) {
             endMs.current = 0
@@ -25,7 +24,6 @@ export function useTurnTimer(turnEndsAtUtc?: string, gameId?: string) {
         setSecondsLeft(Math.ceil((endMs.current - Date.now()) / 1000))
     }, [turnEndsAtUtc])
 
-    // tick local cada 1s basado en end absoluto (sin drift)
     useEffect(() => {
         const id = window.setInterval(() => {
             setSecondsLeft(Math.ceil((endMs.current - Date.now()) / 1000))
@@ -33,7 +31,6 @@ export function useTurnTimer(turnEndsAtUtc?: string, gameId?: string) {
         return () => window.clearInterval(id)
     }, [])
 
-    // poll suave al backend (opcional) para asegurar avance por timeout
     const { mutateAsync: tick } = useTick(gameId ?? '')
     useEffect(() => {
         if (!gameId) return
