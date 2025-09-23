@@ -36,15 +36,37 @@ function build(hubUrl: string, roomCode: string, username: string, initialHandle
   };
 
   const raf = (cb: Function) => (typeof window !== 'undefined' ? requestAnimationFrame(() => cb()) : cb());
-  connection.on('StateUpdated', s => raf(() => callHandlers('StateUpdated', s)));
-  connection.on('TurnChanged', id => raf(() => callHandlers('TurnChanged', { currentPlayerId: id })));
-  connection.on('HitFeedback', (m: string) => callHandlers('HitFeedback', { message: m }));
-  connection.on('Finished', s => callHandlers('Finished', s));
-  connection.on('PlayerJoined', u => callHandlers('PlayerJoined', u));
-  connection.on('PlayerLeft', u => callHandlers('PlayerLeft', u));
-  connection.on('ChatMessage', msg => callHandlers('ChatMessage', msg));
+  connection.on('StateUpdated', s => raf(() =>
+    callHandlers('StateUpdated', s)
+  ));
 
-  connection.onreconnecting(err => callHandlers('Conn', 'reconnecting', err));
+  connection.on('TurnChanged', id => raf(() =>
+    callHandlers('TurnChanged', { currentPlayerId: id })
+  ));
+
+  connection.on('HitFeedback', (m: string) =>
+    callHandlers('HitFeedback', { message: m })
+  );
+
+  connection.on('Finished', s =>
+    callHandlers('Finished', s)
+  );
+
+  connection.on('PlayerJoined', u =>
+    callHandlers('PlayerJoined', u)
+  );
+  connection.on('PlayerLeft', u => 
+    callHandlers('PlayerLeft', u)
+  );
+
+  connection.on('ChatMessage', msg => 
+    callHandlers('ChatMessage', msg)
+  );
+
+  connection.onreconnecting(err => 
+    callHandlers('Conn', 'reconnecting', err)
+  );
+  
   connection.onreconnected(async id => {
     callHandlers('Conn', 'connected', { connId: id, reconnected: true });
     try {
@@ -56,7 +78,7 @@ function build(hubUrl: string, roomCode: string, username: string, initialHandle
   });
 
   connection.onclose(err => {
-    started = false; 
+    started = false;
     callHandlers('Conn', 'disconnected', err);
   });
 
@@ -84,7 +106,7 @@ function build(hubUrl: string, roomCode: string, username: string, initialHandle
     finally {
       started = false;
       startPromise = null;
-      lastGameId = null; 
+      lastGameId = null;
       handlersMap.clear();
     }
   }
@@ -123,11 +145,11 @@ function build(hubUrl: string, roomCode: string, username: string, initialHandle
 export function getGameHub(roomCode: string, username: string, handlers?: Handlers) {
   const hubUrl = new URL('/gameHub', HUB_BASE_URL.replace(/\/+$/, '')).toString();
   const key = `${roomCode}::${username}`;
-  
+
   if (!instances.has(key)) {
     instances.set(key, build(hubUrl, roomCode, username, handlers));
   }
-  
+
   return instances.get(key)!;
 }
 
