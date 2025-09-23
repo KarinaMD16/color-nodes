@@ -1,11 +1,10 @@
-// useGameHub.ts
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { GameStateResponse } from '@/models/game'
 import { getGameHub } from '@/services/gameHub'
 import { useUser } from '@/context/userContext'
 import type { Handlers } from '@/types/hubTypes'
-import { postTick } from '@/services/gameService' // 👈 importa el servicio
+import { postTick } from '@/services/gameService' 
 
 type UpdateOrHandlers =
   | ((s: GameStateResponse) => void)
