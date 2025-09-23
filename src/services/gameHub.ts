@@ -66,7 +66,7 @@ function build(hubUrl: string, roomCode: string, username: string, initialHandle
   connection.onreconnecting(err => 
     callHandlers('Conn', 'reconnecting', err)
   );
-  
+
   connection.onreconnected(async id => {
     callHandlers('Conn', 'connected', { connId: id, reconnected: true });
     try {
@@ -98,12 +98,17 @@ function build(hubUrl: string, roomCode: string, username: string, initialHandle
         throw error;
       }
     })();
-    try { await startPromise; } finally { startPromise = null; }
+    try { 
+      await startPromise; 
+    } finally { 
+      startPromise = null; 
+    }
   }
 
   async function stop() {
-    try { await connection.stop(); }
-    finally {
+    try { 
+      await connection.stop(); 
+    } finally {
       started = false;
       startPromise = null;
       lastGameId = null;
