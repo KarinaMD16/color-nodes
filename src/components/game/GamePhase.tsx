@@ -128,13 +128,6 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
       >
         <div className="min-h-screen bg-black/50 text-white p-6">
           <div className="max-w-full mx-auto">
-            <div className="flex justify-between">
-              <h2 className="text-xl mb-4">Game in progress</h2>
-              {game.currentPlayerId === playerId && (
-                <button onClick={handleLeaveRoom}>Leave Room</button>
-              )}
-
-            </div>
             <PlayersList
               players={players}
               currentPlayerId={game.currentPlayerId}
