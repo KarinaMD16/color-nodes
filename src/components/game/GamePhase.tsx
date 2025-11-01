@@ -20,7 +20,7 @@ import DroppableSlot from './DroppableSlot'
 import { useMemo, useState } from 'react'
 import { AVATAR_SEEDS, Player } from '@/types/PlayerTypes'
 import { PlayersList } from './PlaeyrList'
-import { useGetUsernames, usePostLeaveRoom } from '@/hooks/userHooks'
+import { useGetUsernames } from '@/hooks/userHooks'
 import CupPixelSleeve from '../CupPixelSleeve'
 import { useTurnTimer } from '@/hooks/useTurnTimer'
 
