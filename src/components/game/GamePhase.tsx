@@ -29,7 +29,6 @@ const CUP_SIZE = 110
 const GamePhase = ({ game, setGame }: GamePhaseProps) => {
   const { id: userId } = useUser()
   const playerId = Number(userId) || 0
-  const { mutate: leaveRoom } = usePostLeaveRoom()
   const { items, isAnimating } = useAnimatedCups(game?.cups ?? [])
   const board = useMemo(() => items.map((it) => ({ id: it.id, hex: it.hex })), [items])
 
