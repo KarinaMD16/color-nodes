@@ -67,13 +67,6 @@ const GamePhase = ({ game, setGame }: GamePhaseProps) => {
     await swapMove.mutateAsync({ playerId, fromIndex, toIndex })
   }
 
-    const handleLeaveRoom = () => {
-      leaveRoom({ 
-        userId:  game?.currentPlayerId, 
-        roomCode: game.roomCode 
-      })
-    }
-
   const grid = (
     <motion.div
       layout
